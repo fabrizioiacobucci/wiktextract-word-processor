@@ -1,4 +1,15 @@
-import { DEFAULT_FILTER_OPTIONS, filterOptions, LanguageCode, WiktextractEntry } from "./types";
+import { calculateRarity } from "./rarity";
+import {
+    DEFAULT_FILTER_OPTIONS,
+    filterOptions,
+    LanguageCode,
+    POS_MAPPING,
+    toUTCDateString,
+    WiktextractEntry,
+    Word,
+    WordForm,
+} from "./types";
+import * as crypto from "node:crypto";
 
 export function isStringEmpty(str: string): boolean {
     return str.replaceAll(/\W/gi, "").length === 0 || str.trim().length === 0;
@@ -13,7 +24,11 @@ export function firstLetterToUpperCase(str: string): string {
     const beginning = str.match(/^\W*/);
     if (beginning) {
         const index = beginning[0].length;
-        return str.slice(0, index) + str.charAt(index).toUpperCase() + str.slice(index + 1);
+        return (
+            str.slice(0, index) +
+            str.charAt(index).toUpperCase() +
+            str.slice(index + 1)
+        );
     }
 
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -22,12 +37,81 @@ export function firstLetterToUpperCase(str: string): string {
 /**
  * Sanitizes a string by removing leading punctuation and whitespace
  */
-export function sanitizeString(str: string, firstUpper: boolean = true): string {
+export function sanitizeString(
+    str: string,
+    firstUpper: boolean = true,
+): string {
     if (isStringEmpty(str)) return "";
     return (firstUpper ? firstLetterToUpperCase(str) : str)
         .replaceAll(/^[\s,]*/gi, "")
         .replaceAll(/([;,.:\-!?]+)\s?/gi, "$1 ")
         .trim();
+}
+
+export function getUniqueObjectsArray<T extends object>(
+    array: T[],
+    keyProp?: keyof T,
+): T[] {
+    if (array.length === 0) return [];
+
+    if (keyProp) {
+        const setObj = new Set(array.map((x) => x[keyProp]));
+        setObj.forEach((value) => {
+            const dups = array.filter((x) => x[keyProp] === value)!;
+            if (dups.length > 1) {
+                const merged = dups.reduce(
+                    (acc, obj) => mergeObjects(acc, obj),
+                    {} as T,
+                );
+                array = array.filter((x) => x[keyProp] !== value);
+                array.push(merged);
+            }
+        });
+
+        return array;
+    }
+
+    let setObj = new Set(array.map((x) => JSON.stringify(x)));
+    return Array.from(setObj).map((x) => JSON.parse(x)) as T[];
+}
+
+function mergeObjects<T extends object>(obj1: T, obj2: T): T {
+    const merged: T = { ...obj1 };
+
+    for (const key in obj2) {
+        const k = key as keyof T;
+        if (Array.isArray(obj2[k]) && Array.isArray(merged[k])) {
+            merged[k] = getUniqueObjectsArray([
+                ...merged[k],
+                ...obj2[k],
+            ]) as T[Extract<keyof T, string>];
+        } else if (
+            typeof obj2[k] === "object" &&
+            typeof merged[k] === "object"
+        ) {
+            merged[k] = mergeObjects(
+                merged[k] as object,
+                obj2[k] as object,
+            ) as T[Extract<keyof T, string>];
+        } else {
+            merged[k] = obj2[k] as T[Extract<keyof T, string>];
+        }
+    }
+
+    return merged;
+}
+
+/**
+ * Generates a unique ID for a word based on its text and part of speech
+ */
+function generateWordId(word: string, pos: string): string {
+    const normalized = word.toLowerCase().trim();
+    const hash = crypto
+        .createHash("md5")
+        .update(`${normalized}-${pos}`)
+        .digest("hex")
+        .substring(0, 8);
+    return `${normalized}-${pos}-${hash}`;
 }
 
 /**
@@ -43,12 +127,18 @@ export function sanitizeWord(word: WiktextractEntry): WiktextractEntry {
             example.text = sanitizeString(example.text);
             return example;
         });
-        sense.examples = sense.examples?.filter((example) => example.text.length > 0);
+        sense.examples = sense.examples?.filter(
+            (example) => example.text.length > 0,
+        );
         return sense;
     });
 
-    word.etymology_texts = word.etymology_texts?.map((etym) => sanitizeString(etym));
-    word.etymology_texts = word.etymology_texts?.filter((etym) => etym.length > 0);
+    word.etymology_texts = word.etymology_texts?.map((etym) =>
+        sanitizeString(etym),
+    );
+    word.etymology_texts = word.etymology_texts?.filter(
+        (etym) => etym.length > 0,
+    );
 
     word.synonyms = word.synonyms?.map((syn) => {
         syn.word = sanitizeString(syn.word, false);
@@ -63,6 +153,26 @@ export function sanitizeWord(word: WiktextractEntry): WiktextractEntry {
     word.antonyms = word.antonyms?.filter((ant) => ant.word.length > 0);
 
     return word;
+}
+
+function mapPartOfSpeech(
+    pos: string,
+    posTitle?: string,
+    langCode?: string,
+    customMapping?: Record<string, string>,
+): string {
+    if (!langCode) {
+        return posTitle || pos;
+    }
+
+    const mapping =
+        customMapping || POS_MAPPING[langCode as LanguageCode] || {};
+
+    if (Object.keys(mapping).length === 0) {
+        return posTitle || pos;
+    }
+
+    return mapping[pos.toLowerCase()] || posTitle || pos;
 }
 
 /**
@@ -89,7 +199,10 @@ export function shouldFilterEntry(
     }
 
     // Must have senses (definitions)
-    if (options.filterMissingDefinitions && (!entry.senses || entry.senses.length === 0)) {
+    if (
+        options.filterMissingDefinitions &&
+        (!entry.senses || entry.senses.length === 0)
+    ) {
         return true;
     }
 
@@ -98,7 +211,11 @@ export function shouldFilterEntry(
         if (
             options.customDefinitionPlaceholders?.some((placeholder) =>
                 entry.senses?.some(
-                    (sense) => sense.glosses && sense.glosses[0].toLowerCase().includes(placeholder.toLowerCase()),
+                    (sense) =>
+                        sense.glosses &&
+                        sense.glosses[0]
+                            .toLowerCase()
+                            .includes(placeholder.toLowerCase()),
                 ),
             )
         ) {
@@ -121,7 +238,10 @@ export function shouldFilterEntry(
         });
 
         etymologyText = etymologyText.toLowerCase().trim();
-        if (options.filterEtymologyLength && etymologyText.length < options.minEtymologyLength!) {
+        if (
+            options.filterEtymologyLength &&
+            etymologyText.length < options.minEtymologyLength!
+        ) {
             return true;
         }
 
@@ -140,7 +260,12 @@ export function shouldFilterEntry(
 
     // Filter certain POS types
     const posTitle = entry.pos_title?.toLowerCase() || "";
-    if (options.filterPOS && options.customPOSFilters?.some((pos) => posTitle.includes(pos.toLowerCase()))) {
+    if (
+        options.filterPOS &&
+        options.customPOSFilters?.some((pos) =>
+            posTitle.includes(pos.toLowerCase()),
+        )
+    ) {
         return true;
     }
 
@@ -169,7 +294,9 @@ export function convertToWord(
     // Map etymologies
     const etymologies = entry.etymology_texts!.map((text, index) => ({
         text: text.trim(),
-        number: entry.etymology_number || (entry.etymology_texts!.length > 1 ? index + 1 : undefined),
+        number:
+            entry.etymology_number ||
+            (entry.etymology_texts!.length > 1 ? index + 1 : undefined),
     }));
 
     // Map pronunciations
@@ -199,10 +326,15 @@ export function convertToWord(
         }
 
         // If form already exists, merge tags
-        const existingIndex = uniqueForms.findIndex((f) => f.form === form.form);
+        const existingIndex = uniqueForms.findIndex(
+            (f) => f.form === form.form,
+        );
         if (existingIndex !== -1) {
             uniqueForms[existingIndex].tags = Array.from(
-                new Set([...(uniqueForms[existingIndex].tags || []), ...(form.tags || [])]),
+                new Set([
+                    ...(uniqueForms[existingIndex].tags || []),
+                    ...(form.tags || []),
+                ]),
             );
         }
     }
@@ -218,7 +350,10 @@ export function convertToWord(
         partOfSpeech: [mapPartOfSpeech(entry.pos, entry.pos_title, langCode)],
         definitions,
         etymologies,
-        pronunciations: pronunciations && pronunciations.length > 0 ? getUniqueObjectsArray(pronunciations) : undefined,
+        pronunciations:
+            pronunciations && pronunciations.length > 0
+                ? getUniqueObjectsArray(pronunciations)
+                : undefined,
         synonyms: Array.from(new Set(entry.synonyms?.map((s) => s.word))),
         antonyms: Array.from(new Set(entry.antonyms?.map((a) => a.word))),
         related: Array.from(new Set(entry.related?.map((r) => r.word))),
@@ -230,8 +365,6 @@ export function convertToWord(
         source: "wiktionary",
         license: "CC BY-SA 4.0",
         url: `https://${wiktionaryLang}.wiktionary.org/wiki/${encodeURIComponent(entry.word)}`,
-        // wiktionaryRevisionId: entry.wiktionary_revision_id,
-        // wiktionaryPageId: entry.wiktionary_page_id,
         createdAt: now,
     };
 

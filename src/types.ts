@@ -25,12 +25,79 @@ export const DEFAULT_FILTER_OPTIONS: filterOptions = {
     filterMissingDefinitions: true,
     customDefinitionPlaceholders: FILTER_DEFINITION as unknown as string[],
     filterEtymologyContent: true,
-    customEtymologyPlaceholders: FILTER_ETYMOLOGY_CONTENT as unknown as string[],
+    customEtymologyPlaceholders:
+        FILTER_ETYMOLOGY_CONTENT as unknown as string[],
     filterEtymologyLength: true,
     minEtymologyLength: FILTER_ETYMOLOGY_LENGTH as unknown as number,
     filterPOS: true,
     customPOSFilters: FILTER_POS as unknown as string[],
+} as const;
+
+export const POS_MAPPING: Record<LanguageCode, Record<string, string>> = {
+    it: {
+        noun: "sostantivo",
+        verb: "verbo",
+        adj: "aggettivo",
+        adv: "avverbio",
+        name: "nome proprio",
+        prefix: "prefisso",
+        suffix: "suffisso",
+        interj: "interiezione",
+        contraction: "contrazione",
+        character: "carattere",
+        proverb: "proverbio",
+        phrase: "locuzione",
+        prep: "preposizione",
+        conj: "congiunzione",
+        pron: "pronome",
+        det: "determinante",
+        article: "articolo",
+        num: "numerale",
+    },
+    en: {
+        noun: "noun",
+        verb: "verb",
+        adj: "adjective",
+        adv: "adverb",
+        name: "proper noun",
+        prefix: "prefix",
+        suffix: "suffix",
+        interj: "interjection",
+        contraction: "contraction",
+        character: "character",
+        proverb: "proverb",
+        phrase: "phrase",
+        prep: "preposition",
+        conj: "conjunction",
+        pron: "pronoun",
+        det: "determiner",
+        article: "article",
+        num: "numeral",
+    },
+    // Add mappings for other languages as needed
+    es: {},
+    fr: {},
+    de: {},
 };
+
+export const rarityTagScores: Readonly<Record<string, number>> = {
+    obsolete: 40,
+    archaic: 30,
+    rare: 18,
+    literary: 20,
+    poetic: 20,
+    historical: 15,
+    dialectal: 15,
+    regional: 0,
+    formal: 10,
+    figuratively: -10,
+    broadly: -10,
+    vulgar: -10,
+    slang: -15,
+    informal: -15,
+    colloquial: -20,
+    common: -30,
+} as const;
 
 // === DATE & TIMESTAMP TYPES ===
 
@@ -63,7 +130,8 @@ export type ISODateString = string;
 export type UnixTimestamp = number;
 
 // Helper functions for date conversion
-export const toUTCDateString = (date: Date): ISODateString => date.toUTCString();
+export const toUTCDateString = (date: Date): ISODateString =>
+    date.toUTCString();
 export const fromISODateString = (str: ISODateString): Date => new Date(str);
 export const toUnixTimestamp = (date: Date): UnixTimestamp => date.getTime();
 export const fromUnixTimestamp = (ts: UnixTimestamp): Date => new Date(ts);

@@ -1,17 +1,25 @@
 {
-  "name": "wiktionary-word-processor",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/node": "^25.6.1",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.3"
-  }
+    "name": "wiktextract-word-processor",
+    "type": "module",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.ts",
+    "types": "./index.ts",
+    "exports": {
+        ".": {
+            "types": "./index.ts",
+            "default": "./index.ts"
+        }
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "@types/node": "^25.6.1",
+        "tsx": "^4.21.0",
+        "typescript": "^6.0.3"
+    }
 }

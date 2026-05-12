@@ -1,12 +1,12 @@
 import * as fs from "node:fs";
-import { LanguageCode, WiktextractEntry } from "./types";
+import { LanguageCode, WiktextractEntry } from "./types.ts";
 import {
     CalculateRarityOptions,
     DEFAULT_RARITY_CALCULATION_OPTIONS,
     POS_RARITY_MODIFIER,
     RARITY_TAG_SCORES,
     TECHNICAL_CATEGORIES,
-} from "./rarity.types";
+} from "./rarity.types.ts";
 
 export function getFrequencyRarityAdjustment(rank: number | undefined): number {
     if (rank === undefined) {

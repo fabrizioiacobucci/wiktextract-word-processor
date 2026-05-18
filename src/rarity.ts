@@ -390,7 +390,7 @@ export function calculateRarity(
     }
 
     // === TIER 3: Weak Indicators ===
-    if (options.includeTier3Signals) {
+    if (options.includeTier3Signals && (hasFrequency || (rarityMap.tags as number) <= 0)) {
         const fn = options.tier3SignalFn ?? calculateTier3Signals;
         const add = fn(entry);
         score += add;

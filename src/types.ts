@@ -276,6 +276,12 @@ export interface WordForm {
     tags: string[];
 }
 
+export interface WordQuote {
+    text: string;
+    author?: string;
+    source?: string;
+}
+
 export interface Word {
     // === BASE FIELDS ===
     id: string;
@@ -293,11 +299,7 @@ export interface Word {
     pronunciations?: WordPronunciation[];
 
     // === EXAMPLES & QUOTES ===
-    quotes?: Array<{
-        text: string;
-        author?: string;
-        source?: string;
-    }>;
+    quotes?: WordQuote[];
 
     // === TRANSLATIONS ===
     translations?: Partial<Record<LanguageCode, string | string[]>>;

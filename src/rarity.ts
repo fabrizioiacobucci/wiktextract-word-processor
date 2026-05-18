@@ -14,22 +14,22 @@ export function getFrequencyRarityAdjustment(rank: number | undefined): number {
     }
 
     if (rank <= 500) {
-        return -20;
+        return -25;
     }
     if (rank <= 2000) {
-        return -12;
+        return -15;
     }
     if (rank <= 5000) {
-        return -8;
+        return -10;
     }
     if (rank <= 10000) {
-        return -5;
+        return -7;
     }
     if (rank <= 20000) {
-        return 0;
+        return -5;
     }
     if (rank <= 50000) {
-        return 2;
+        return 0;
     }
 
     return 5;

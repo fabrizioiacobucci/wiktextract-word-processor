@@ -75,6 +75,7 @@ export function loadFrequencyData(filePath: string): Map<string, number> {
             if (lastFrequency != f) {
                 rank++;
                 frequencyRanks.set(w, rank);
+                lastFrequency = f;
             }
         }
     });

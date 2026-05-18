@@ -287,9 +287,9 @@ export function calculateRarity(
     options: CalculateRarityOptions = DEFAULT_RARITY_CALCULATION_OPTIONS,
 ): { score: number; map: object } {
     let score = options.baseScore;
-    const hasFrequency = !frequencyMap
-        ? true
-        : !!frequencyMap.entries().find((v) => v[0] == entry.word);
+    const hasFrequency = frequencyMap
+        ? !!frequencyMap.entries().find((v) => v[0] == entry.word)
+        : false;
 
     const rarityMap: { [key: string]: number | boolean } = {
         frequency: 0,
@@ -339,7 +339,7 @@ export function calculateRarity(
     }
 
     // 2. Technical/specialized categories
-    if (options.includeTechnicalCategory && !hasFrequency) {
+    if (options.includeTechnicalCategory) {
         const fn = options.technicalCategoryFn ?? calculateTechnicalCategory;
         const techResult = fn(
             entry.senses,
@@ -390,7 +390,7 @@ export function calculateRarity(
     }
 
     // === TIER 3: Weak Indicators ===
-    if (options.includeTier3Signals && hasFrequency) {
+    if (options.includeTier3Signals) {
         const fn = options.tier3SignalFn ?? calculateTier3Signals;
         const add = fn(entry);
         score += add;

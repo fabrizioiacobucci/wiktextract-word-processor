@@ -24,17 +24,19 @@ export interface CalculateRarityOptions {
     includeDerivedCount?: boolean;
     includeTier3Signals?: boolean;
     includeWordLength?: boolean;
-    frequencyRarityFn?: (rank: number | undefined) => number;
+    frequencyRarityFn?: (word: string, rank: Map<string, number>) => number;
     rarityTagFn?: (
         senses: WiktextractEntry["senses"],
         rarityTagScores: Record<string, number>,
         tags: string[],
-    ) => number;
+        rarityMap: { [key: string]: number | boolean },
+    ) => { score: number; count: number };
     technicalCategoryFn?: (
         senses: WiktextractEntry["senses"],
         categories: string[],
         lang: LanguageCode,
-    ) => number;
+        rarityMap?: { [key: string]: number | boolean },
+    ) => { score: number; count: number };
     verbConjugationFn?: (pos: string, formsCount: number) => number;
     polysemousFn?: (
         pos: string,
@@ -43,12 +45,15 @@ export interface CalculateRarityOptions {
     ) => number;
     derivedCountFn?: (derivedCount: number) => number;
     tier3SignalFn?: (entry: WiktextractEntry) => number;
-    wordLengthFn?: (word: string) => number;
+    wordLengthFn?: (
+        word: string,
+        rarityMap?: { [key: string]: number | boolean },
+    ) => number;
     clampingFn?: (entry: WiktextractEntry, score: number) => number;
 }
 
 export const DEFAULT_RARITY_CALCULATION_OPTIONS: CalculateRarityOptions = {
-    baseScore: 50,
+    baseScore: 40,
     includeFrequency: true,
     includeRarityTags: true,
     includeTechnicalCategory: true,
@@ -77,12 +82,12 @@ export const RARITY_TAG_SCORES: Record<string, number> = {
     poetic: 20,
     historical: 15,
     dialectal: 15,
-    regional: 0,
     formal: 10,
-    figuratively: -10,
-    broadly: -10,
+    regional: 0,
+    // figuratively: -10,
+    // broadly: -10,
     vulgar: -10,
-    slang: -15,
+    slang: -10,
     informal: -15,
     colloquial: -20,
     common: -30,
@@ -96,6 +101,7 @@ export const TECHNICAL_CATEGORIES: Record<LanguageCode, string[]> = {
         "chimica",
         "geometria",
         "algebra",
+        "biochimica",
         // Scienze naturali
         "biologia",
         "anatomia",
@@ -105,26 +111,33 @@ export const TECHNICAL_CATEGORIES: Record<LanguageCode, string[]> = {
         "paleontologia",
         "micologia",
         "entomologia",
+        "ittiologia",
+        "mammalogia",
         // Medicina
         "medicina",
         "farmacologia",
         "chirurgia",
+        "psichiatria",
         // Scienze sociali
         "diritto",
         "giurisprudenza",
         "filosofia",
         "teologia",
         "linguistica",
+        "storia",
         // Tecnica
         "ingegneria",
         "architettura",
         "informatica",
         "elettronica",
+        "tecnologia",
         // Altro
         "militare",
         "nautica",
         "astronomia",
         "astrologia",
+        "forestierismi",
+        "professioni",
     ],
     en: [],
     es: [],

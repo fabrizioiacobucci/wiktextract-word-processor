@@ -8,28 +8,33 @@ import {
     TECHNICAL_CATEGORIES,
 } from "./rarity.types.ts";
 
-export function getFrequencyRarityAdjustment(rank: number | undefined): number {
-    if (rank === undefined) {
+export function getFrequencyRarityAdjustment(
+    word: string,
+    rank: Map<string, number>,
+): number {
+    const rankValue = rank.entries().find(([w, r]) => w == word)?.[1];
+
+    if (rankValue === undefined) {
         return 5;
     }
 
-    if (rank <= 500) {
-        return -25;
-    }
-    if (rank <= 2000) {
+    const maxRank = Math.max(...rank.values());
+    const set = maxRank / 4;
+
+    if (rankValue <= set) {
         return -15;
     }
-    if (rank <= 5000) {
+
+    if (rankValue <= set * 2 && rankValue > set) {
         return -10;
     }
-    if (rank <= 10000) {
+
+    if (rankValue <= set * 3 && rankValue > set * 2) {
         return -7;
     }
-    if (rank <= 20000) {
+
+    if (rankValue > set * 3) {
         return -5;
-    }
-    if (rank <= 50000) {
-        return 0;
     }
 
     return 5;
@@ -37,10 +42,12 @@ export function getFrequencyRarityAdjustment(rank: number | undefined): number {
 
 export function loadFrequencyData(filePath: string): Map<string, number> {
     const frequencyRanks = new Map<string, number>();
+    const frequency = new Map<string, number>();
     const fileContents = fs.readFileSync(filePath, "utf-8");
     const lines = fileContents.split(/\r?\n/);
-
     let rank = 0;
+    let lastFrequency = 0;
+
     for (const line of lines) {
         if (line.trim() === "") {
             continue;
@@ -48,19 +55,29 @@ export function loadFrequencyData(filePath: string): Map<string, number> {
 
         // FrequencyWords format: "word count" (space-separated) or "word\tcount" (tab-separated)
         const separatorIndex = line.indexOf("\t");
-        const word = (
-            separatorIndex >= 0
-                ? line.slice(0, separatorIndex)
-                : line.slice(0, line.lastIndexOf(" "))
-        ).trim();
+        const [word, freq] = line.split(separatorIndex > 0 ? "\t" : " ");
 
-        if (word === "") {
-            continue;
+        frequency.set(word, Number(freq));
+    }
+
+    frequency.entries().forEach(([w, f]) => {
+        if (lastFrequency == 0) {
+            rank++;
+            frequencyRanks.set(w, rank);
+            lastFrequency = f;
         }
 
-        rank += 1;
-        frequencyRanks.set(word, rank);
-    }
+        if (lastFrequency > 0) {
+            if (lastFrequency == f) {
+                frequencyRanks.set(w, rank);
+            }
+
+            if (lastFrequency != f) {
+                rank++;
+                frequencyRanks.set(w, rank);
+            }
+        }
+    });
 
     return frequencyRanks;
 }
@@ -69,9 +86,10 @@ export function calculateRarityTag(
     senses: WiktextractEntry["senses"],
     rarityTagScores: Record<string, number>,
     tags: string[],
-): number {
-    const sensesCount = senses?.length || 0;
+    rarityMap?: { [key: string]: number | boolean },
+): { score: number; count: number } {
     let score = 0;
+    const sensesCount = senses?.length || 0;
     const senseTagCounts = new Map<string, number>();
 
     for (const sense of senses || []) {
@@ -97,23 +115,28 @@ export function calculateRarityTag(
         }
     }
 
-    return score;
+    return {
+        score: score * (rarityMap?.hasFrequency ? 0.5 : 1),
+        count: senseTagCounts.keys().toArray().length,
+    };
 }
 
 export function calculateTechnicalCategory(
     senses: WiktextractEntry["senses"],
     categories: string[],
     lang: LanguageCode,
-): number {
+    rarityMap?: { [key: string]: number | boolean },
+): { score: number; count: number } {
     const technicalCategories = TECHNICAL_CATEGORIES[lang] || [];
     let score = 0;
+    let techCategories = 0;
+    let techTopics = 0;
 
     if (technicalCategories.length === 0) {
-        return score; // No technical category data for this language
+        return { score, count: 0 }; // No technical category data for this language
     }
 
     // Check sense-level topics
-    let hasTechnicalTopic = false;
     for (const sense of senses || []) {
         const topics = sense.categories || [];
         if (
@@ -123,34 +146,23 @@ export function calculateTechnicalCategory(
                 ),
             )
         ) {
-            hasTechnicalTopic = true;
-            break;
+            techTopics += 1;
         }
     }
 
-    let hasTechnicalCategory = false;
     // Check entry-level categories
     for (const cat of categories) {
         const catLower = cat.toLowerCase();
         if (technicalCategories.some((tech) => catLower.startsWith(tech))) {
-            hasTechnicalCategory = true;
-            break;
+            techCategories += 1;
         }
     }
 
-    if (hasTechnicalTopic && hasTechnicalCategory) {
-        score += 20;
-    }
+    score +=
+        (5 * techTopics + 3 * techCategories) *
+        ((rarityMap?.tagsCount as number) > 0 ? 1.25 : 1);
 
-    if (hasTechnicalTopic && !hasTechnicalCategory) {
-        score += 15;
-    }
-
-    if (!hasTechnicalTopic && hasTechnicalCategory) {
-        score += 12;
-    }
-
-    return score;
+    return { score, count: techTopics + techCategories };
 }
 
 export function calculateVerbConjugation(
@@ -176,6 +188,10 @@ export function calculatePolysemous(
 
     if (sensesCount >= 4 && derivedCount >= 3) {
         return -8; // Highly polysemous + productive words are usually common
+    }
+
+    if (sensesCount >= 4 && derivedCount >= 5) {
+        return -10; // Highly polysemous + productive words are usually common
     }
 
     return 0;
@@ -223,16 +239,19 @@ export function calculateTier3Signals(entry: WiktextractEntry): number {
     return tier3;
 }
 
-export function calculateWordLength(word: string): number {
+export function calculateWordLength(
+    word: string,
+    rarityMap?: { [key: string]: number | boolean },
+): number {
     let score = 0;
     const wordLength = word.length;
     if (wordLength >= 15) {
         score += 8; // Very long words tend to be technical/rare
     } else if (wordLength >= 12) {
         score += 5; // Long words
-    } else if (wordLength <= 4) {
+    } else if (rarityMap?.hasFrequency && wordLength <= 4) {
         score -= 8; // Very short words tend to be common (casa, cane, mare)
-    } else if (wordLength <= 6) {
+    } else if (rarityMap?.hasFrequency && wordLength <= 6) {
         score -= 3; // Short words
     }
 
@@ -241,7 +260,7 @@ export function calculateWordLength(word: string): number {
         wordLength <= 6 &&
         /[qxjkwy]|([bcdfglmnprstvz])\1/.test(word.toLowerCase())
     ) {
-        score += 3; // Compensate: rare phonetic patterns
+        score += 5; // Compensate: rare phonetic patterns
     }
 
     return score;
@@ -265,15 +284,35 @@ export function calculateRarity(
     entry: WiktextractEntry,
     frequencyMap: Map<string, number> | undefined,
     options: CalculateRarityOptions = DEFAULT_RARITY_CALCULATION_OPTIONS,
-): number {
+): { score: number; map: object } {
     let score = options.baseScore;
+    const hasFrequency = !frequencyMap
+        ? true
+        : !!frequencyMap.entries().find((v) => v[0] == entry.word);
+
+    const rarityMap: { [key: string]: number | boolean } = {
+        frequency: 0,
+        hasFrequency,
+        tags: 0,
+        tagsCount: 0,
+        categories: 0,
+        categoriesCount: 0,
+        conjugation: 0,
+        polysemous: 0,
+        pos: 0,
+        derived: 0,
+        tier3: 0,
+        length: 0,
+        clamping: 0,
+    };
 
     // Tier 0 frequency scoring
     if (frequencyMap && options.includeFrequency) {
-        const frequencyRank = frequencyMap.get(entry.word);
-        score += options.frequencyRarityFn
-            ? options.frequencyRarityFn(frequencyRank)
+        const frequencyRank = options.frequencyRarityFn
+            ? options.frequencyRarityFn(entry.word, frequencyMap)
             : 0;
+        score += frequencyRank;
+        rarityMap.frequency = frequencyRank;
     }
 
     // Pre-calculate common metrics
@@ -286,40 +325,48 @@ export function calculateRarity(
 
     // 1. Explicit rarity tags
     if (options.includeRarityTags) {
-        score += options.rarityTagFn
-            ? options.rarityTagFn(
-                  entry.senses,
-                  options.customRarityTagScores || RARITY_TAG_SCORES,
-                  entry.tags || [],
-              )
-            : 0;
+        const fn = options.rarityTagFn ?? calculateRarityTag;
+        const tagResult = fn(
+            entry.senses,
+            options.customRarityTagScores || RARITY_TAG_SCORES,
+            entry.tags || [],
+            rarityMap,
+        );
+        score += tagResult.score;
+        rarityMap.tags = tagResult.score;
+        rarityMap.tagsCount = tagResult.count;
     }
 
     // 2. Technical/specialized categories
-    if (options.includeTechnicalCategory) {
-        score += options.technicalCategoryFn
-            ? options.technicalCategoryFn(
-                  entry.senses,
-                  entry.categories || [],
-                  entry.lang_code as LanguageCode,
-              )
-            : 0;
+    if (options.includeTechnicalCategory && !hasFrequency) {
+        const fn = options.technicalCategoryFn ?? calculateTechnicalCategory;
+        const techResult = fn(
+            entry.senses,
+            entry.categories || [],
+            entry.lang_code as LanguageCode,
+            rarityMap,
+        );
+        score += techResult.score;
+        rarityMap.categories = techResult.score;
+        rarityMap.categoriesCount = techResult.count;
     }
 
     // === TIER 1.5: Frequency of Use Signals ===
 
     // Heavily conjugated verbs are fundamental
-    if (options.includeVerbConjugation) {
-        score += options.verbConjugationFn
-            ? options.verbConjugationFn(pos, formsCount)
-            : 0;
+    if (options.includeVerbConjugation && entry.pos == "verb") {
+        const fn = options.verbConjugationFn ?? calculateVerbConjugation;
+        const add = fn(pos, formsCount);
+        score += add;
+        rarityMap.conjugation = add;
     }
 
     // Polysemous + productive = semantic nucleus
     if (options.includePolysemous) {
-        score += options.polysemousFn
-            ? options.polysemousFn(pos, sensesCount, derivedCount)
-            : 0;
+        const fn = options.polysemousFn ?? calculatePolysemous;
+        const add = fn(pos, sensesCount, derivedCount);
+        score += add;
+        rarityMap.polysemous = add;
     }
 
     // === TIER 2: Medium Indicators (±8-20 points) ===
@@ -327,32 +374,41 @@ export function calculateRarity(
         options.includePosRarityModifier &&
         pos in (options.customPosRarityModifier || POS_RARITY_MODIFIER)
     ) {
-        score += (options.customPosRarityModifier || POS_RARITY_MODIFIER)[pos];
+        const add = (options.customPosRarityModifier || POS_RARITY_MODIFIER)[
+            pos
+        ];
+        score += add;
+        rarityMap.pos = add;
     }
 
     if (options.includeDerivedCount) {
-        score += options.derivedCountFn
-            ? options.derivedCountFn(derivedCount)
-            : calculateDerivedCount(derivedCount);
+        const fn = options.derivedCountFn ?? calculateDerivedCount;
+        const add = fn(derivedCount);
+        score += add;
+        rarityMap.derived = add;
     }
 
     // === TIER 3: Weak Indicators ===
-    if (options.includeTier3Signals) {
-        score += options.tier3SignalFn
-            ? options.tier3SignalFn(entry)
-            : calculateTier3Signals(entry);
+    if (options.includeTier3Signals && hasFrequency) {
+        const fn = options.tier3SignalFn ?? calculateTier3Signals;
+        const add = fn(entry);
+        score += add;
+        rarityMap.tier3 = add;
     }
 
     // 9. Word length analysis
     if (options.includeWordLength) {
-        score += options.wordLengthFn
-            ? options.wordLengthFn(entry.word)
-            : calculateWordLength(entry.word);
+        const fn = options.wordLengthFn ?? calculateWordLength;
+        const add = fn(entry.word, rarityMap);
+        score += add;
+        rarityMap.length = add;
     }
 
     const clamped = options.clampingFn
         ? options.clampingFn(entry, score)
         : defaultClampingFn(entry, score);
 
-    return clamped;
+    rarityMap.clamping = score - clamped;
+
+    return { score: clamped, map: rarityMap };
 }

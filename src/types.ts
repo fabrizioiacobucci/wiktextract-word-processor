@@ -318,6 +318,7 @@ export interface Word {
 
     // === LEXIBA METADATA ===
     rarity: number; // 1-100
+    rarityMap: object;
     rand: number; // 0-1 for random sampling
 
     // === ATTRIBUTION ===

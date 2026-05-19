@@ -111,7 +111,7 @@ function parseSupportedLanguageCode(rawValue: string): LanguageCode {
 
     if (!isSupportedLanguageCode(normalized)) {
         throw new Error(
-            `Codice lingua non supportato: ${rawValue}. Valori ammessi: ${SUPPORTED_LANGUAGE_CODES.join(", ")}`,
+            `Language code not supported: ${rawValue}. Allowed values: ${SUPPORTED_LANGUAGE_CODES.join(", ")}`,
         );
     }
 
@@ -125,7 +125,7 @@ export function normalizeLangCode(value: string): LanguageCode {
         const message =
             error instanceof Error
                 ? error.message
-                : `Codice lingua non valido: ${value}`;
+                : `Language code not valid: ${value}`;
         console.error(`❌ ${message}`);
         process.exit(1);
     }

@@ -76,7 +76,7 @@ export function getUniqueObjectsArray<T extends object>(
     return Array.from(setObj).map((x) => JSON.parse(x)) as T[];
 }
 
-function mergeObjects<T extends object>(obj1: T, obj2: T): T {
+export function mergeObjects<T extends object>(obj1: T, obj2: T): T {
     const merged: T = { ...obj1 };
 
     for (const key in obj2) {
@@ -102,11 +102,22 @@ function mergeObjects<T extends object>(obj1: T, obj2: T): T {
     return merged;
 }
 
-function isSupportedLanguageCode(value: string): value is LanguageCode {
+export function omit<T extends object, K extends keyof T>(
+    obj: T,
+    ...props: K[]
+): Omit<T, K> {
+    const result = { ...obj };
+    props.forEach(function (prop) {
+        delete result[prop];
+    });
+    return result;
+}
+
+export function isSupportedLanguageCode(value: string): value is LanguageCode {
     return (SUPPORTED_LANGUAGE_CODES as readonly string[]).includes(value);
 }
 
-function parseSupportedLanguageCode(rawValue: string): LanguageCode {
+export function parseSupportedLanguageCode(rawValue: string): LanguageCode {
     const normalized = rawValue.toLowerCase().trim();
 
     if (!isSupportedLanguageCode(normalized)) {
@@ -134,7 +145,7 @@ export function normalizeLangCode(value: string): LanguageCode {
 /**
  * Generates a unique ID for a word based on its text and part of speech
  */
-function generateWordId(word: string, pos: string): string {
+export function generateWordId(word: string, pos: string): string {
     const normalized = word.toLowerCase().trim();
     const hash = crypto
         .createHash("md5")

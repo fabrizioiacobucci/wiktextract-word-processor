@@ -29,7 +29,7 @@ export interface CalculateRarityOptions {
         senses: WiktextractEntry["senses"],
         rarityTagScores: Record<string, number>,
         tags: string[],
-        rarityMap: { [key: string]: number | boolean },
+        rarityMap?: { [key: string]: number | boolean },
     ) => { score: number; count: number };
     technicalCategoryFn?: (
         senses: WiktextractEntry["senses"],

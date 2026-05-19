@@ -15,29 +15,14 @@ export function getFrequencyRarityAdjustment(
     const rankValue = rank.entries().find(([w, r]) => w == word)?.[1];
 
     if (rankValue === undefined) {
-        return 5;
+        return 10;
     }
 
+    // Continuous scale: percentile 0 (most common) → -25, percentile 1 (rarest in corpus) → +7
+    // sqrt compression gives more resolution at the common end
     const maxRank = Array.from(rank.values())[rank.size - 1];
-    const set = maxRank / 4;
-
-    if (rankValue <= set) {
-        return -15;
-    }
-
-    if (rankValue <= set * 2 && rankValue > set) {
-        return -10;
-    }
-
-    if (rankValue <= set * 3 && rankValue > set * 2) {
-        return -7;
-    }
-
-    if (rankValue > set * 3) {
-        return -5;
-    }
-
-    return 5;
+    const t = Math.sqrt(rankValue / maxRank);
+    return Math.round(-25 + 32 * t);
 }
 
 export function loadFrequencyData(filePath: string): Map<string, number> {
@@ -55,7 +40,7 @@ export function loadFrequencyData(filePath: string): Map<string, number> {
 
         // FrequencyWords format: "word count" (space-separated) or "word\tcount" (tab-separated)
         const firstDigit = line.search(/\d/);
-        let word = line.slice(0, firstDigit - 1);
+        let word = line.slice(0, firstDigit - 1).trim();
         const freq = line.slice(firstDigit);
 
         word =

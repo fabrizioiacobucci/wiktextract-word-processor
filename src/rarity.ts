@@ -15,14 +15,14 @@ export function getFrequencyRarityAdjustment(
     const rankValue = rank.entries().find(([w, r]) => w == word)?.[1];
 
     if (rankValue === undefined) {
-        return 5;
+        return 10; // absent from all corpora scores above rarest in-corpus (+7)
     }
 
-    // Continuous scale: percentile 0 (most common) → -25, percentile 1 (rarest) → +20
+    // Continuous scale: percentile 0 (most common) → -25, percentile 1 (rarest in corpus) → +7
     // sqrt compression gives more resolution at the common end
     const maxRank = Array.from(rank.values())[rank.size - 1];
     const t = Math.sqrt(rankValue / maxRank);
-    return Math.round(-25 + 45 * t);
+    return Math.round(-25 + 32 * t);
 }
 
 export function loadFrequencyData(filePath: string): Map<string, number> {

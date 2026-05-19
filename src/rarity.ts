@@ -18,7 +18,7 @@ export function getFrequencyRarityAdjustment(
         return 5;
     }
 
-    const maxRank = Math.max(...rank.values());
+    const maxRank = Array.from(rank.values())[rank.size - 1];
     const set = maxRank / 4;
 
     if (rankValue <= set) {
@@ -54,8 +54,14 @@ export function loadFrequencyData(filePath: string): Map<string, number> {
         }
 
         // FrequencyWords format: "word count" (space-separated) or "word\tcount" (tab-separated)
-        const separatorIndex = line.indexOf("\t");
-        const [word, freq] = line.split(separatorIndex > 0 ? "\t" : " ");
+        const firstDigit = line.search(/\d/);
+        let word = line.slice(0, firstDigit - 1);
+        const freq = line.slice(firstDigit);
+
+        word =
+            word[0] === word[0].toUpperCase()
+                ? word[0] + word.slice(1).toLowerCase()
+                : word.toLocaleLowerCase();
 
         frequency.set(word, Number(freq));
     }
@@ -287,9 +293,7 @@ export function calculateRarity(
     options: CalculateRarityOptions = DEFAULT_RARITY_CALCULATION_OPTIONS,
 ): { score: number; map: object } {
     let score = options.baseScore;
-    const hasFrequency = frequencyMap
-        ? !!frequencyMap.entries().find((v) => v[0] == entry.word)
-        : false;
+    const hasFrequency = frequencyMap ? frequencyMap.has(entry.word) : false;
 
     const rarityMap: { [key: string]: number | boolean } = {
         frequency: 0,
@@ -390,7 +394,10 @@ export function calculateRarity(
     }
 
     // === TIER 3: Weak Indicators ===
-    if (options.includeTier3Signals && (hasFrequency || (rarityMap.tags as number) <= 0)) {
+    if (
+        options.includeTier3Signals &&
+        (hasFrequency || (rarityMap.tags as number) <= 0)
+    ) {
         const fn = options.tier3SignalFn ?? calculateTier3Signals;
         const add = fn(entry);
         score += add;

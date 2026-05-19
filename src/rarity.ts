@@ -298,9 +298,8 @@ export function calculateRarity(
 
     // Tier 0 frequency scoring
     if (frequencyMap && options.includeFrequency) {
-        const frequencyRank = options.frequencyRarityFn
-            ? options.frequencyRarityFn(entry.word, frequencyMap)
-            : 0;
+        const fn = options.frequencyRarityFn ?? getFrequencyRarityAdjustment;
+        const frequencyRank = fn(entry.word, frequencyMap);
         score += frequencyRank;
         rarityMap.frequency = frequencyRank;
     }

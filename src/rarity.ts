@@ -15,7 +15,7 @@ export function getFrequencyRarityAdjustment(
     const rankValue = rank.entries().find(([w, r]) => w == word)?.[1];
 
     if (rankValue === undefined) {
-        return 10; // absent from all corpora scores above rarest in-corpus (+7)
+        return 10;
     }
 
     // Continuous scale: percentile 0 (most common) → -25, percentile 1 (rarest in corpus) → +7
@@ -40,7 +40,7 @@ export function loadFrequencyData(filePath: string): Map<string, number> {
 
         // FrequencyWords format: "word count" (space-separated) or "word\tcount" (tab-separated)
         const firstDigit = line.search(/\d/);
-        let word = line.slice(0, firstDigit - 1);
+        let word = line.slice(0, firstDigit - 1).trim();
         const freq = line.slice(firstDigit);
 
         word =

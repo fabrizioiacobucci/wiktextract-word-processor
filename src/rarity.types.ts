@@ -53,7 +53,7 @@ export interface CalculateRarityOptions {
 }
 
 export const DEFAULT_RARITY_CALCULATION_OPTIONS: CalculateRarityOptions = {
-    baseScore: 35,
+    baseScore: 40,
     includeFrequency: true,
     includeRarityTags: true,
     includeTechnicalCategory: true,

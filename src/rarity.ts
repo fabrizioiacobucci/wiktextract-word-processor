@@ -18,26 +18,11 @@ export function getFrequencyRarityAdjustment(
         return 5;
     }
 
+    // Continuous scale: percentile 0 (most common) → -25, percentile 1 (rarest) → +20
+    // sqrt compression gives more resolution at the common end
     const maxRank = Array.from(rank.values())[rank.size - 1];
-    const set = maxRank / 4;
-
-    if (rankValue <= set) {
-        return -15;
-    }
-
-    if (rankValue <= set * 2 && rankValue > set) {
-        return -10;
-    }
-
-    if (rankValue <= set * 3 && rankValue > set * 2) {
-        return -7;
-    }
-
-    if (rankValue > set * 3) {
-        return -5;
-    }
-
-    return 5;
+    const t = Math.sqrt(rankValue / maxRank);
+    return Math.round(-25 + 45 * t);
 }
 
 export function loadFrequencyData(filePath: string): Map<string, number> {

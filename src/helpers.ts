@@ -6,6 +6,7 @@ import {
     POS_MAPPING,
     SUPPORTED_LANGUAGE_CODES,
     toUTCDateString,
+    ValidationResult,
     WiktextractEntry,
     Word,
     WordForm,
@@ -439,4 +440,75 @@ export function getEntryLang(
     }
 
     return normalizeLangCode(entry.lang_code);
+}
+
+export function validateRecord(record: unknown): ValidationResult {
+    const missingFields: string[] = [];
+
+    if (!record || typeof record !== "object") {
+        return {
+            valid: false,
+            reason: "record is not an object",
+        };
+    }
+
+    const candidateRecord = record as Partial<Word>;
+
+    if (!candidateRecord.id || typeof candidateRecord.id !== "string") {
+        missingFields.push("id");
+    }
+
+    if (!candidateRecord.word || typeof candidateRecord.word !== "string") {
+        missingFields.push("word");
+    }
+
+    if (
+        !Array.isArray(candidateRecord.definitions) ||
+        candidateRecord.definitions.length === 0
+    ) {
+        missingFields.push("definitions");
+    }
+
+    if (
+        !Array.isArray(candidateRecord.etymologies) ||
+        candidateRecord.etymologies.length === 0
+    ) {
+        missingFields.push("etymologies");
+    }
+
+    if (missingFields.length > 0) {
+        return {
+            valid: false,
+            reason: `missing/not valid fields: ${missingFields.join(", ")}`,
+        };
+    }
+
+    return { valid: true };
+}
+
+export function stableStringify(value: unknown): string {
+    if (Array.isArray(value)) {
+        return `[${value.map(stableStringify).join(",")}]`;
+    }
+
+    if (value !== null && typeof value === "object") {
+        const keys = Object.keys(value).sort();
+        return `{${keys.map((key) => `${JSON.stringify(key)}:${stableStringify((value as any)[key])}`).join(",")}}`;
+    }
+
+    return JSON.stringify(value);
+}
+
+export function deterministicDocumentId(entry: Word): string {
+    if (typeof entry.id === "string" && entry.id) {
+        return entry.id;
+    }
+
+    const base = stableStringify({
+        lang: getEntryLang(entry) ?? "",
+        word: entry.word ?? "",
+        definitions: entry.definitions ?? [],
+    });
+
+    return crypto.createHash("sha1").update(base).digest("hex");
 }

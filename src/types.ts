@@ -136,6 +136,13 @@ export const fromISODateString = (str: ISODateString): Date => new Date(str);
 export const toUnixTimestamp = (date: Date): UnixTimestamp => date.getTime();
 export const fromUnixTimestamp = (ts: UnixTimestamp): Date => new Date(ts);
 
+export type ValidationResult =
+    | { valid: true }
+    | {
+          valid: false;
+          reason: string;
+      };
+
 export interface WiktextractEntry {
     // Identifiers
     word: string; // "linfa", "serendipità"

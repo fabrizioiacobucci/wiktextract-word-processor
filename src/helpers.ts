@@ -420,3 +420,23 @@ export function convertToWord(
 
     return word;
 }
+
+export const isWord = (w: any): w is Word => {
+    return (
+        typeof w === "object" &&
+        Object.keys(w).includes("id") &&
+        Object.keys(w).includes("lang") &&
+        Object.keys(w).includes("word") &&
+        Object.keys(w).includes("rarity")
+    );
+};
+
+export function getEntryLang(
+    entry: Word | WiktextractEntry,
+): string | undefined {
+    if (isWord(entry)) {
+        return normalizeLangCode(entry.lang);
+    }
+
+    return normalizeLangCode(entry.lang_code);
+}

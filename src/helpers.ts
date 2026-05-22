@@ -461,7 +461,8 @@ export function convertToWord(
     return word;
 }
 
-export const isWord = (w: any): w is Word => {
+export const isWord = (w: unknown): w is Word => {
+    if (!w) return false;
     return (
         typeof w === "object" &&
         Object.keys(w).includes("id") &&

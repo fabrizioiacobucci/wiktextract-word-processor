@@ -516,6 +516,10 @@ export function validateRecord(record: unknown): ValidationResult {
         missingFields.push("etymologies");
     }
 
+    if (!candidateRecord.rarity || typeof candidateRecord.rarity !== "number") {
+        missingFields.push("rarity");
+    }
+
     if (missingFields.length > 0) {
         return {
             valid: false,

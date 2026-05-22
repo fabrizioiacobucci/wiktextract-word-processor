@@ -163,6 +163,7 @@ export interface WiktextractEntry {
         }>;
         tags?: string[]; // ["figurative", "informal", etc.]
         categories?: string[]; // Specific categories for this sense
+        topics?: string[];
         raw_glosses?: string[]; // Raw version without processing
     }>;
 

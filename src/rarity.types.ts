@@ -24,7 +24,11 @@ export interface CalculateRarityOptions {
     includeDerivedCount?: boolean;
     includeTier3Signals?: boolean;
     includeWordLength?: boolean;
-    frequencyRarityFn?: (word: string, rank: Map<string, number>) => number;
+    frequencyRarityFn?: (
+        word: string,
+        rank: Map<string, number>,
+        maxRank: number,
+    ) => number;
     rarityTagFn?: (
         senses: WiktextractEntry["senses"],
         rarityTagScores: Record<string, number>,

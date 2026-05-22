@@ -14,7 +14,7 @@ import {
 import * as crypto from "node:crypto";
 
 export function isStringEmpty(str: string): boolean {
-    return str.replaceAll(/\W/gi, "").length === 0 || str.trim().length === 0;
+    return str.replaceAll(/\W/gi, "").trim().length === 0;
 }
 
 /**
@@ -45,32 +45,37 @@ export function sanitizeString(
 ): string {
     if (isStringEmpty(str)) return "";
     return (firstUpper ? firstLetterToUpperCase(str) : str)
-        .replaceAll(/^[\s,]*/gi, "")
-        .replaceAll(/([;,.:\-!?]+)\s?/gi, "$1 ")
+        .replaceAll(/^[\s;,.:\-!?]*/gi, "")
+        .replaceAll(/([;,.:!?]+)\s?/gi, "$1 ")
+        .replaceAll(/([\(\[])\s+/gi, "$1")
         .trim();
 }
 
-export function getUniqueObjectsArray<T extends object>(
+export function dedupArray<T, K extends keyof T>(
     array: T[],
-    keyProp?: keyof T,
+    ...keyProp: K[]
 ): T[] {
-    if (array.length === 0) return [];
+    if (!array || array.length === 0) return array;
 
-    if (keyProp) {
-        const setObj = new Set(array.map((x) => x[keyProp]));
-        setObj.forEach((value) => {
-            const dups = array.filter((x) => x[keyProp] === value)!;
-            if (dups.length > 1) {
-                const merged = dups.reduce(
-                    (acc, obj) => mergeObjects(acc, obj),
-                    {} as T,
-                );
-                array = array.filter((x) => x[keyProp] !== value);
-                array.push(merged);
-            }
-        });
+    const getKey = (element: T, props: K[]) => {
+        const propsValue = [];
+        for (const p of props) {
+            propsValue.push(element[p]);
+        }
 
-        return array;
+        return propsValue.join("|").replaceAll(/\s/gi, "");
+    };
+
+    if (keyProp && keyProp.length > 0 && typeof array[0] === "object") {
+        const result: T[] = [];
+        for (const el of array) {
+            if (result.find((e) => getKey(e, keyProp) === getKey(el, keyProp)))
+                continue;
+
+            result.push(el);
+        }
+
+        return result;
     }
 
     let setObj = new Set(array.map((x) => JSON.stringify(x)));
@@ -83,10 +88,10 @@ export function mergeObjects<T extends object>(obj1: T, obj2: T): T {
     for (const key in obj2) {
         const k = key as keyof T;
         if (Array.isArray(obj2[k]) && Array.isArray(merged[k])) {
-            merged[k] = getUniqueObjectsArray([
-                ...merged[k],
-                ...obj2[k],
-            ]) as T[Extract<keyof T, string>];
+            merged[k] = dedupArray([...merged[k], ...obj2[k]]) as T[Extract<
+                keyof T,
+                string
+            >];
         } else if (
             typeof obj2[k] === "object" &&
             typeof merged[k] === "object"
@@ -159,48 +164,66 @@ export function generateWordId(word: string, pos: string): string {
 /**
  * Sanitizes glosses by removing leading punctuation and whitespace
  */
-export function sanitizeWord(word: WiktextractEntry): WiktextractEntry {
+export function sanitizeEntry(word: WiktextractEntry): WiktextractEntry {
     word.senses = word.senses?.map((sense) => {
         sense.glosses = sense.glosses?.map((gloss) => {
             return sanitizeString(gloss);
         });
-        sense.glosses = sense.glosses?.filter((gloss) => gloss.length > 0);
+
         sense.examples = sense.examples?.map((example) => {
             example.text = sanitizeString(example.text);
             return example;
         });
+
         sense.examples = sense.examples?.filter(
-            (example) => example.text.length > 0,
+            (example) => !isStringEmpty(example.text),
         );
+
         if (
             sense.glosses?.some((g) => g.trim().endsWith(":")) &&
             (!sense.examples || sense.examples?.length == 0)
         ) {
-            sense.glosses = sense.glosses?.map((gloss) => {
-                return gloss.substring(0, gloss.length - 1);
-            });
+            const withCol = sense.glosses?.filter((g) =>
+                g.trim().endsWith(":"),
+            );
+            const woCol = sense.glosses?.filter((g) => !g.trim().endsWith(":"));
+            sense.glosses = [
+                ...woCol,
+                ...withCol.map((gloss) => {
+                    return gloss.trim().substring(0, gloss.length - 1);
+                }),
+            ];
         }
+
+        sense.glosses = dedupArray(
+            sense.glosses?.filter((gloss) => !isStringEmpty(gloss)),
+        );
+
         return sense;
     });
 
     word.etymology_texts = word.etymology_texts?.map((etym) =>
         sanitizeString(etym),
     );
-    word.etymology_texts = word.etymology_texts?.filter(
-        (etym) => etym.length > 0,
+    word.etymology_texts = dedupArray(
+        word.etymology_texts?.filter((etym) => !isStringEmpty(etym)) ?? [],
     );
 
     word.synonyms = word.synonyms?.map((syn) => {
         syn.word = sanitizeString(syn.word, false);
         return syn;
     });
-    word.synonyms = word.synonyms?.filter((syn) => syn.word.length > 0);
+    word.synonyms = dedupArray(
+        word.synonyms?.filter((syn) => !isStringEmpty(syn.word)) ?? [],
+    );
 
     word.antonyms = word.antonyms?.map((ant) => {
         ant.word = sanitizeString(ant.word, false);
         return ant;
     });
-    word.antonyms = word.antonyms?.filter((ant) => ant.word.length > 0);
+    word.antonyms = dedupArray(
+        word.antonyms?.filter((ant) => !isStringEmpty(ant.word)) ?? [],
+    );
 
     return word;
 }
@@ -233,6 +256,11 @@ export function shouldFilterEntry(
     langCode: LanguageCode,
     options: filterOptions = DEFAULT_FILTER_OPTIONS,
 ): boolean {
+    // Must match target language
+    if (entry.lang_code !== langCode) {
+        return true;
+    }
+
     // Filter Treccani references
     if (
         options.filterExternalSources &&
@@ -243,17 +271,21 @@ export function shouldFilterEntry(
         return true;
     }
 
-    // Must match target language
-    if (entry.lang_code !== langCode) {
-        return true;
-    }
-
-    // Must have senses (definitions)
-    if (
-        options.filterMissingDefinitions &&
-        (!entry.senses || entry.senses.length === 0)
-    ) {
-        return true;
+    if (options.filterMissingDefinitions) {
+        // Must have senses (definitions)
+        if (!entry.senses) return true;
+        if (entry.senses.length === 0) return true;
+        if (entry.senses.flatMap((s) => s.glosses).length === 0) return true;
+        if (entry.senses.length === 1) {
+            if (!entry.senses[0].glosses) return true;
+            if (entry.senses[0].glosses.length === 0) return true;
+            if (
+                entry.senses[0].tags?.includes("no-gloss") ||
+                entry.senses[0].glosses[0]?.includes("*")
+            ) {
+                return true;
+            }
+        }
     }
 
     // Filter entries with missing definitions
@@ -263,6 +295,7 @@ export function shouldFilterEntry(
                 entry.senses?.some(
                     (sense) =>
                         sense.glosses &&
+                        sense.glosses.length > 0 &&
                         sense.glosses[0]
                             .toLowerCase()
                             .includes(placeholder.toLowerCase()),
@@ -329,17 +362,23 @@ export function convertToWord(
     entry: WiktextractEntry,
     langCode: LanguageCode,
     frequencyMap: Map<string, number> | undefined,
+    maxRank: number,
 ): Word {
     const now = toUTCDateString(new Date());
     const wiktionaryLang = langCode;
 
     // Map definitions
-    const definitions = (entry.senses || []).map((sense) => ({
-        text: sense.glosses?.[0] || "",
-        examples: sense.examples?.map((ex) => ex.text) || [],
-        tags: sense.tags || [],
-        topics: sense.categories || [],
-    }));
+    const definitions = (entry.senses ?? [])
+        .filter(
+            (s) =>
+                (s.glosses?.filter((g) => !isStringEmpty(g)) ?? []).length > 0,
+        )
+        .map((sense) => ({
+            text: sense.glosses?.[0],
+            examples: sense.examples?.map((ex) => ex.text) || [],
+            tags: sense.tags || [],
+            topics: sense.categories || [],
+        }));
 
     // Map etymologies
     const etymologies = entry.etymology_texts!.map((text, index) => ({
@@ -390,7 +429,7 @@ export function convertToWord(
     }
 
     // Calculate rarity
-    const rarity = calculateRarity(entry, frequencyMap);
+    const rarity = calculateRarity(entry, frequencyMap, maxRank);
 
     // Build Word object
     const word: Word = {
@@ -402,7 +441,7 @@ export function convertToWord(
         etymologies,
         pronunciations:
             pronunciations && pronunciations.length > 0
-                ? getUniqueObjectsArray(pronunciations)
+                ? dedupArray(pronunciations)
                 : undefined,
         synonyms: Array.from(new Set(entry.synonyms?.map((s) => s.word))),
         antonyms: Array.from(new Set(entry.antonyms?.map((a) => a.word))),
@@ -512,3 +551,64 @@ export function deterministicDocumentId(entry: Word): string {
 
     return crypto.createHash("sha1").update(base).digest("hex");
 }
+
+export const mergeWords = (w1: Word, w2: Word) => {
+    w1.partOfSpeech = Array.from(
+        new Set([...w1.partOfSpeech, ...w2.partOfSpeech]),
+    );
+
+    // Merge definitions (deduplica per contenuto testuale)
+    w1.definitions = dedupArray([...w1.definitions, ...w2.definitions], "text");
+
+    // Merge etymologies (deduplica per testo)
+    w1.etymologies = dedupArray(
+        [...w1.etymologies, ...w2.etymologies],
+        "text",
+        "lang",
+    );
+
+    // Merge pronunciations (deduplica per IPA)
+    w1.pronunciations = dedupArray([
+        ...(w1.pronunciations || []),
+        ...(w2.pronunciations || []),
+    ]);
+
+    // Merge synonyms/antonyms/related (deduplica stringhe)
+    if (w2.synonyms) {
+        w1.synonyms = Array.from(
+            new Set([...(w1.synonyms || []), ...w2.synonyms]),
+        );
+    }
+    if (w2.antonyms) {
+        w1.antonyms = Array.from(
+            new Set([...(w1.antonyms || []), ...w2.antonyms]),
+        );
+    }
+    if (w2.related) {
+        w1.related = Array.from(
+            new Set([...(w1.related || []), ...w2.related]),
+        );
+    }
+
+    w1.forms = dedupArray([...(w1.forms || []), ...(w2.forms || [])], "form");
+
+    // Merge categories (deduplica stringhe)
+    if (w2.categories) {
+        w1.categories = Array.from(
+            new Set([...(w1.categories || []), ...w2.categories]),
+        );
+    }
+
+    // Merge tags (deduplica stringhe)
+    if (w2.tags) {
+        w1.tags = Array.from(new Set([...(w1.tags || []), ...w2.tags]));
+    }
+
+    // Update rarity (media pesata sul numero di definizioni)
+    const existingWeight = w1.definitions.length;
+    const newWeight = w2.definitions.length;
+    const totalWeight = existingWeight + newWeight;
+    w1.rarity = (w1.rarity + w2.rarity) / 2;
+
+    return w1;
+};

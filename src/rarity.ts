@@ -11,16 +11,15 @@ import {
 export function getFrequencyRarityAdjustment(
     word: string,
     rank: Map<string, number>,
+    maxRank: number,
 ): number {
-    const rankValue = rank.entries().find(([w, r]) => w == word)?.[1];
-
+    const rankValue = rank.get(word);
     if (rankValue === undefined) {
         return 10;
     }
 
     // Continuous scale: percentile 0 (most common) → -25, percentile 1 (rarest in corpus) → +7
     // sqrt compression gives more resolution at the common end
-    const maxRank = Array.from(rank.values())[rank.size - 1];
     const t = Math.sqrt(rankValue / maxRank);
     return Math.round(-25 + 32 * t);
 }
@@ -275,6 +274,7 @@ export function defaultClampingFn(
 export function calculateRarity(
     entry: WiktextractEntry,
     frequencyMap: Map<string, number> | undefined,
+    maxRank: number,
     options: CalculateRarityOptions = DEFAULT_RARITY_CALCULATION_OPTIONS,
 ): { score: number; map: object } {
     let score = options.baseScore;
@@ -299,7 +299,7 @@ export function calculateRarity(
     // Tier 0 frequency scoring
     if (frequencyMap && options.includeFrequency) {
         const fn = options.frequencyRarityFn ?? getFrequencyRarityAdjustment;
-        const frequencyRank = fn(entry.word, frequencyMap);
+        const frequencyRank = fn(entry.word, frequencyMap, maxRank);
         score += frequencyRank;
         rarityMap.frequency = frequencyRank;
     }

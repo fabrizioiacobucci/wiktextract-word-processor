@@ -170,14 +170,7 @@ export function sanitizeEntry(word: WiktextractEntry): WiktextractEntry {
             return sanitizeString(gloss);
         });
 
-        sense.examples = sense.examples?.map((example) => {
-            example.text = sanitizeString(example.text);
-            return example;
-        });
-
-        sense.examples = sense.examples?.filter(
-            (example) => !isStringEmpty(example.text),
-        );
+        sense.examples = cleanup(sense.examples, "text");
 
         if (
             sense.glosses?.some((g) => g.trim().endsWith(":")) &&
@@ -202,31 +195,37 @@ export function sanitizeEntry(word: WiktextractEntry): WiktextractEntry {
         return sense;
     });
 
-    word.etymology_texts = word.etymology_texts?.map((etym) =>
-        sanitizeString(etym),
-    );
-    word.etymology_texts = dedupArray(
-        word.etymology_texts?.filter((etym) => !isStringEmpty(etym)) ?? [],
-    );
-
-    word.synonyms = word.synonyms?.map((syn) => {
-        syn.word = sanitizeString(syn.word, false);
-        return syn;
-    });
-    word.synonyms = dedupArray(
-        word.synonyms?.filter((syn) => !isStringEmpty(syn.word)) ?? [],
-    );
-
-    word.antonyms = word.antonyms?.map((ant) => {
-        ant.word = sanitizeString(ant.word, false);
-        return ant;
-    });
-    word.antonyms = dedupArray(
-        word.antonyms?.filter((ant) => !isStringEmpty(ant.word)) ?? [],
-    );
+    word.etymology_texts = cleanup(word.etymology_texts);
+    word.synonyms = cleanup(word.synonyms, "word");
+    word.derived = cleanup(word.derived, "word");
+    word.related = cleanup(word.related, "word");
+    word.antonyms = cleanup(word.antonyms, "word");
+    word.hypernyms = cleanup(word.hypernyms, "word");
+    word.hyponyms = cleanup(word.hyponyms, "word");
+    word.translations = cleanup(word.translations, "sense", false);
+    word.hyphenations = cleanup(word.hyphenations, "sense", false);
+    word.sounds = cleanup(word.sounds, "sense", false);
+    word.proverbs = cleanup(word.proverbs, "sense", false);
+    word.forms = dedupArray(word.forms ?? [], "form");
 
     return word;
 }
+
+const cleanup = (array?: any[], key?: string, filter: boolean = true) => {
+    return dedupArray(
+        array
+            ?.map((item) => {
+                if (key) item[key] = sanitizeString(item[key], false);
+
+                if (!key) item = sanitizeString(item, false);
+
+                return item;
+            })
+            ?.filter((item) =>
+                filter ? !isStringEmpty(key ? item[key] : item) : true,
+            ) ?? [],
+    );
+};
 
 function mapPartOfSpeech(
     pos: string,
@@ -383,9 +382,7 @@ export function convertToWord(
     // Map etymologies
     const etymologies = entry.etymology_texts!.map((text, index) => ({
         text: text.trim(),
-        number:
-            entry.etymology_number ||
-            (entry.etymology_texts!.length > 1 ? index + 1 : undefined),
+        number: entry.etymology_texts!.length > 1 ? index + 1 : undefined,
     }));
 
     // Map pronunciations

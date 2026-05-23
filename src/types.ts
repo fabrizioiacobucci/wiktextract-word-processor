@@ -115,6 +115,9 @@ export const rarityTagScores: Readonly<Record<string, number>> = {
  */
 export type ISODateString = string;
 
+function isISOFormat(date: string) {
+    return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z/.test(date);
+}
 /**
  * Unix timestamp in milliseconds (e.g., 1699267800000)
  *
@@ -131,7 +134,7 @@ export type UnixTimestamp = number;
 
 // Helper functions for date conversion
 export const toUTCDateString = (date: Date): ISODateString =>
-    date.toUTCString();
+    date.toISOString();
 export const fromISODateString = (str: ISODateString): Date => new Date(str);
 export const toUnixTimestamp = (date: Date): UnixTimestamp => date.getTime();
 export const fromUnixTimestamp = (ts: UnixTimestamp): Date => new Date(ts);
@@ -143,116 +146,103 @@ export type ValidationResult =
           reason: string;
       };
 
+interface SenseExample {
+    text: string;
+    bold_text_offsets: [number[]];
+    translation: string;
+    ref: string;
+    roman: string;
+    bold_roman_offsets: [number[]];
+    bold_translation_offsets: [number[]];
+    tags: string[];
+}
+
+interface SenseForm {
+    word: string;
+}
+
+interface Sense {
+    glosses: string[];
+    raw_tags: string[];
+    tags: string[];
+    form_of: SenseForm[];
+    examples: SenseExample[];
+    categories: string[];
+    topics: string[];
+}
+
+interface Translation {
+    lang_code: string;
+    lang: string;
+    word: string;
+    sense: string;
+    roman: string;
+    tags: string[];
+    raw_tags: string[];
+}
+
+interface Hyphenation {
+    parts: string[];
+    sense: string;
+}
+
+interface Sound {
+    ipa: string;
+    sense: string;
+    audio: string;
+    ogg_url: string;
+    mp3_url: string;
+    raw_tags: string[];
+    wav_url: string;
+    oga_url: string;
+    opus_url: string;
+    tags: string[];
+    flac_url: string;
+}
+
+interface SemanticRelation {
+    word: string;
+    raw_tags: string[];
+    tags: string[];
+}
+
+interface Proverb {
+    word: string;
+    sense: string;
+}
+
+interface Form {
+    form: string;
+    tags: string[];
+    raw_tags: string[];
+    source: string;
+}
+
 export interface WiktextractEntry {
-    // Identifiers
-    word: string; // "linfa", "serendipità"
-    lang: string; // "Italian" for Italian dump
-    lang_code: string; // "it"
-
-    // Part of speech
-    pos: string; // "noun", "adj", "verb", "adv", etc.
-    pos_title?: string;
-
-    // Definitions (senses)
-    senses?: Array<{
-        glosses: string[]; // ["main definition", "secondary definition"]
-        examples?: Array<{
-            text: string; // Usage example
-            type?: string; // "example", "quotation"
-            ref?: string; // Source reference
-        }>;
-        tags?: string[]; // ["figurative", "informal", etc.]
-        categories?: string[]; // Specific categories for this sense
-        topics?: string[];
-        raw_glosses?: string[]; // Raw version without processing
-    }>;
-
-    // Etymology
-    etymology_texts?: string[]; // "from Latin lympha"
-    etymology_templates?: Array<{
-        name: string; // "etimo", "der", etc.
-        args?: {
-            [key: string]: string; // { "lingua": "la", "1": "lympha" }
-        };
-        expansion?: string; // Template expansion
-    }>;
-    etymology_number?: number; // For words with multiple etymologies
-
-    // Pronunciation
-    sounds?: Array<{
-        ipa?: string; // "/ˈlinfa/"
-        audio?: string; // Filename on Wikimedia Commons
-        audio_ipa?: string; // IPA for specific audio
-        ogg_url?: string; // Direct audio file URL
-        mp3_url?: string; // Direct MP3 audio file URL
-        tags?: string[]; // ["Toscana"], ["Milano"], etc.
-    }>;
-
-    // Forms (conjugations, declensions)
-    forms?: Array<{
-        form: string; // Inflected form
-        tags: string[]; // ["plural"], ["feminine"], etc.
-        source?: string; // "inflection-table", etc.
-        raw_tags?: string[]; // Raw tags before processing
-    }>;
-
-    // Synonyms/Antonyms
-    synonyms?: Array<{
-        word: string;
-        sense?: string; // Which sense it refers to
-        tags?: string[];
-    }>;
-    antonyms?: Array<{
-        word: string;
-        sense?: string;
-        tags?: string[];
-    }>;
-
-    // Related words
-    related?: Array<{
-        word: string;
-        tags?: string[];
-    }>;
-    derived?: Array<{
-        // Derived words
-        word: string;
-        tags?: string[];
-    }>;
-
-    // Translations
-    translations?: Array<{
-        lang: string; // "English", "Spanish", etc.
-        lang_code: string; // "en", "es", etc.
-        word: string; // Translation
-        sense?: string; // Which sense it refers to
-        tags?: string[];
-    }>;
-
-    // Metadata
-    categories?: string[]; // ["Italian lemmas", "Italian nouns", "it:Biology"]
-    tags?: string[]; // ["feminine", "masculine", "countable", etc.]
-    topics?: string[]; // ["biology", "medicine", "law", etc.]
-
-    // Wiktionary page info (if available in dump)
-    wiktionary_page_id?: number; // MediaWiki page ID
-    wiktionary_revision_id?: number; // Revision ID from which data was extracted
-    last_modified?: string; // ISO timestamp "2025-01-15T10:30:00Z"
-
-    // Other potentially present fields
-    hyphenation?: string[]; // Syllabication ["lin", "fa"]
-    head_templates?: Array<{
-        // Page head templates
-        name: string;
-        args?: { [key: string]: string };
-        expansion?: string;
-    }>;
-
-    // Notes and references
+    word: string;
+    lang_code: string;
+    lang: string;
+    pos: string;
+    pos_title: string;
+    senses?: Sense[];
+    categories?: string[];
+    translations?: Translation[];
+    etymology_texts?: string[];
+    hyphenations?: Hyphenation[];
+    sounds?: Sound[];
+    synonyms?: SemanticRelation[];
+    derived?: SemanticRelation[];
+    related?: SemanticRelation[];
+    proverbs?: Proverb[];
+    tags?: string[];
+    forms?: Form[];
+    hypernyms?: SemanticRelation[];
+    antonyms?: SemanticRelation[];
+    hyponyms?: SemanticRelation[];
+    raw_tags?: string[];
     notes?: string[];
-    references?: Array<{
-        text?: string;
-        url?: string;
-    }>;
+    title?: string;
+    redirect?: string;
 }
 
 export const SUPPORTED_LANGUAGE_CODES = ["it", "en", "es", "fr", "de"] as const;
@@ -260,69 +250,9 @@ export const SUPPORTED_LANGUAGE_CODES = ["it", "en", "es", "fr", "de"] as const;
 export type LanguageCode = (typeof SUPPORTED_LANGUAGE_CODES)[number];
 export type languages = LanguageCode;
 
-export interface WordDefinition {
-    text: string; // Definition text
-    examples?: string[]; // Examples for THIS definition
-    tags?: string[]; // Semantic tags: "formal", "informal", "figurative", etc.
-    topics?: string[]; // Thematic topics: "medicine", "law", "biology"
-}
-
-export interface WordEtymology {
-    text: string; // Etymology text
-    lang?: string; // Origin language code ("la", "gr")
-    number?: number; // Etymology number (for polysemous words)
-}
-
-export interface WordPronunciation {
-    ipa?: string; // IPA notation
-    audio?: string; // Audio URL
-    syllabication?: string; // Syllable breakdown
-}
-
-export interface WordForm {
-    form: string;
-    tags: string[];
-}
-
-export interface WordQuote {
-    text: string;
-    author?: string;
-    source?: string;
-}
-
-export interface Word {
+export type Word = WiktextractEntry & {
     // === BASE FIELDS ===
     id: string;
-    lang: LanguageCode; // "it" | "en" | "es" | "fr" | "de"
-    word: string; // The word text
-    partOfSpeech: string[]; // "sostantivo", "aggettivo", "verbo" (Italian)
-
-    // === DEFINITIONS (multiple senses) ===
-    definitions: WordDefinition[]; // Array of all meanings
-
-    // === ETYMOLOGY (can be multiple for polysemous words) ===
-    etymologies: WordEtymology[];
-
-    // === PRONUNCIATION ===
-    pronunciations?: WordPronunciation[];
-
-    // === EXAMPLES & QUOTES ===
-    quotes?: WordQuote[];
-
-    // === TRANSLATIONS ===
-    translations?: Partial<Record<LanguageCode, string | string[]>>;
-
-    // === SEMANTIC RELATIONS ===
-    synonyms?: string[];
-    antonyms?: string[];
-    hypernyms?: string[]; // Broader terms
-    hyponyms?: string[]; // Narrower terms
-    related?: string[]; // Related words
-
-    // === WIKTEXTRACT METADATA ===
-    forms?: WordForm[];
-    categories?: string[]; // Wiktionary categories
-    tags?: string[]; // Global tags merged from all definitions
 
     // === LEXIBA METADATA ===
     rarity: number; // 1-100
@@ -337,4 +267,4 @@ export interface Word {
     // === TIMESTAMPS ===
     createdAt: ISODateString; // When document was created in Supabase
     updatedAt?: ISODateString; // Last update timestamp
-}
+};

@@ -37,15 +37,15 @@ function parseTopics<T extends { topics?: string[] }>(
 }
 
 function parseSense(raw: RawSense): ParsedSense {
-    const examples: ParsedSenseExample[] = raw.examples.map(parseTags);
+    const examples: ParsedSenseExample[] = (raw.examples ?? []).map(parseTags);
 
     const parsed = parseTopics(parseTags(raw));
 
     return {
         ...parsed,
         examples: examples,
-        tagLabels: parsed.tags.map((k) => TAGS[k]),
-        topicLabels: parsed.topics.map((k) => TOPICS[k]),
+        tagLabels: (parsed.tags ?? []).map((k) => TAGS[k]),
+        topicLabels: (parsed.topics ?? []).map((k) => TOPICS[k]),
     };
 }
 
@@ -66,7 +66,6 @@ export function parseEntry(
 
         pos: [parsed.pos],
         pos_title: [parsed.pos_title],
-        title: parsed.title ? [parsed.title] : [],
 
         senses: (raw.senses ?? []).map(parseSense),
         sounds: (raw.sounds ?? []).map(parseTags),

@@ -1,5 +1,5 @@
 export function isStringEmpty(str: string): boolean {
-    return str.replaceAll(/\W/gi, "").trim().length === 0;
+    return !str || str.replaceAll(/\W/gi, "").trim().length === 0;
 }
 
 /**

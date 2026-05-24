@@ -240,13 +240,13 @@ export interface UnknownTopics {
 
 export interface RawSenseExample {
     text: string;
-    bold_text_offsets: [number[]];
-    translation: string;
-    ref: string;
-    roman: string;
-    bold_roman_offsets: [number[]];
-    bold_translation_offsets: [number[]];
-    tags: string[];
+    bold_text_offsets?: [number[]];
+    translation?: string;
+    ref?: string;
+    roman?: string;
+    bold_roman_offsets?: [number[]];
+    bold_translation_offsets?: [number[]];
+    tags?: string[];
 }
 
 export interface ParsedSenseExample extends RawSenseExample, UnknownTags {}
@@ -257,12 +257,12 @@ interface SenseForm {
 
 export interface RawSense {
     glosses: string[];
-    raw_tags: string[];
-    tags: string[];
-    form_of: SenseForm[];
-    examples: RawSenseExample[];
-    categories: string[];
-    topics: string[];
+    raw_tags?: string[];
+    tags?: string[];
+    form_of?: SenseForm[];
+    examples?: RawSenseExample[];
+    categories?: string[];
+    topics?: string[];
 }
 
 export interface ParsedSense
@@ -286,21 +286,21 @@ export interface ParsedTranslation extends RawTranslation, UnknownTags {}
 
 interface Hyphenation {
     parts: string[];
-    sense: string;
+    sense?: string;
 }
 
 export interface RawSound {
     ipa: string;
-    sense: string;
-    audio: string;
-    ogg_url: string;
-    mp3_url: string;
-    raw_tags: string[];
-    wav_url: string;
-    oga_url: string;
-    opus_url: string;
-    tags: string[];
-    flac_url: string;
+    sense?: string;
+    audio?: string;
+    ogg_url?: string;
+    mp3_url?: string;
+    raw_tags?: string[];
+    wav_url?: string;
+    oga_url?: string;
+    opus_url?: string;
+    tags?: string[];
+    flac_url?: string;
 }
 
 export interface ParsedSound extends RawSound, UnknownTags {}
@@ -321,9 +321,9 @@ interface Proverb {
 
 export interface RawForm {
     form: string;
-    tags: string[];
-    raw_tags: string[];
-    source: string;
+    tags?: string[];
+    raw_tags?: string[];
+    source?: string;
 }
 
 export interface ParsedForm extends RawForm, UnknownTags {}
@@ -332,24 +332,27 @@ export interface WiktextractEntry {
     word: string;
     lang_code: string;
     lang: string;
+
     pos: string;
     pos_title: string;
     senses?: RawSense[];
-    categories?: string[];
-    translations?: RawTranslation[];
     etymology_texts?: string[];
+    forms?: RawForm[];
     hyphenations?: Hyphenation[];
     sounds?: RawSound[];
+    tags?: string[];
+    categories?: string[];
+    raw_tags?: string[];
+    proverbs?: Proverb[];
+    translations?: RawTranslation[];
+
     synonyms?: RawSemanticRelation[];
     derived?: RawSemanticRelation[];
     related?: RawSemanticRelation[];
-    proverbs?: Proverb[];
-    tags?: string[];
-    forms?: RawForm[];
     hypernyms?: RawSemanticRelation[];
     antonyms?: RawSemanticRelation[];
     hyponyms?: RawSemanticRelation[];
-    raw_tags?: string[];
+
     notes?: string[];
     title?: string;
     redirect?: string;
@@ -362,7 +365,6 @@ export interface Word
 
     pos: string[];
     pos_title: string[];
-    title?: string[];
 
     senses: ParsedSense[];
     translations?: ParsedTranslation[];

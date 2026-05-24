@@ -17,7 +17,7 @@ import {
 } from "../types/filters.types.ts";
 
 export const isSupportedLanguageCode = (k: string): k is LanguageCode =>
-    k in SUPPORTED_LANGUAGE_CODES;
+    SUPPORTED_LANGUAGE_CODES.includes(k as LanguageCode);
 
 export function parseSupportedLanguageCode(rawValue: string): LanguageCode {
     const normalized = rawValue.toLowerCase().trim();
@@ -326,7 +326,6 @@ export const mergeWords = (w1: Word, w2: Word) => {
 
     result.pos = dedupArray([...result.pos, ...w2.pos]);
     result.pos_title = dedupArray([...result.pos_title, ...w2.pos_title]);
-    result.title = dedupArray([...(result.title ?? []), ...(w2.title ?? [])]);
 
     // Merge definitions (deduplica per contenuto testuale)
     result.senses = dedupArray([...result.senses, ...w2.senses], "glosses");

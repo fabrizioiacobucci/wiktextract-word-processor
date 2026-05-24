@@ -8,8 +8,9 @@ import {
     calculateTier3Signals,
     calculateWordLength,
     defaultClampingFn,
-} from "./rarity";
-import { LanguageCode, WiktextractEntry } from "./types";
+} from "../helpers/rarity";
+import { WiktextractEntry } from "./word.types";
+import { LanguageCode } from "./generic.types";
 
 export interface CalculateRarityOptions {
     baseScore: number;
@@ -78,7 +79,7 @@ export const DEFAULT_RARITY_CALCULATION_OPTIONS: CalculateRarityOptions = {
     clampingFn: defaultClampingFn,
 };
 
-export const RARITY_TAG_SCORES: Record<string, number> = {
+export const RARITY_TAG_SCORES: Readonly<Record<string, number>> = {
     obsolete: 40,
     archaic: 30,
     rare: 18,
@@ -95,59 +96,7 @@ export const RARITY_TAG_SCORES: Record<string, number> = {
     informal: -15,
     colloquial: -20,
     common: -30,
-};
-
-export const TECHNICAL_CATEGORIES: Record<LanguageCode, string[]> = {
-    it: [
-        // Scienze esatte
-        "matematica",
-        "fisica",
-        "chimica",
-        "geometria",
-        "algebra",
-        "biochimica",
-        // Scienze naturali
-        "biologia",
-        "anatomia",
-        "botanica",
-        "zoologia",
-        "geologia",
-        "paleontologia",
-        "micologia",
-        "entomologia",
-        "ittiologia",
-        "mammalogia",
-        // Medicina
-        "medicina",
-        "farmacologia",
-        "chirurgia",
-        "psichiatria",
-        // Scienze sociali
-        "diritto",
-        "giurisprudenza",
-        "filosofia",
-        "teologia",
-        "linguistica",
-        "storia",
-        // Tecnica
-        "ingegneria",
-        "architettura",
-        "informatica",
-        "elettronica",
-        "tecnologia",
-        // Altro
-        "militare",
-        "nautica",
-        "astronomia",
-        "astrologia",
-        "forestierismi",
-        "professioni",
-    ],
-    en: [],
-    es: [],
-    fr: [],
-    de: [],
-};
+} as const;
 
 export const POS_RARITY_MODIFIER: Record<string, number> = {
     character: 40,

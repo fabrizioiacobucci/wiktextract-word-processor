@@ -93,13 +93,13 @@ export function mergeObjects<T extends object>(obj1: T, obj2: T): T {
     return merged;
 }
 
-export function omit<T extends object, K extends keyof T>(
+export function omit<T extends { [k: string]: any }, K extends string>(
     obj: T,
     ...props: K[]
 ): Omit<T, K> {
     const result = { ...obj };
     props.forEach(function (prop) {
-        delete result[prop];
+        if (prop in result) delete result[prop];
     });
     return result;
 }

@@ -124,6 +124,7 @@ export const TAGS: Readonly<Record<string, string>> = {
     vulgar: "volgare",
 } as const;
 export type TagKey = keyof typeof TAGS;
+export const TagKeys = Object.keys(TAGS) as TagKey[];
 export type TagLabel = (typeof TAGS)[TagKey];
 
 export const TOPICS: Readonly<Record<string, string>> = {
@@ -229,6 +230,16 @@ export const TOPICS: Readonly<Record<string, string>> = {
 export type TopicKey = keyof typeof TOPICS;
 export const TopicKeys = Object.keys(TOPICS) as TopicKey[];
 export type TopicLabel = (typeof TOPICS)[TopicKey];
+
+export const SemanticRelations = [
+    "synonym",
+    "derived",
+    "related",
+    "hypernym",
+    "antonym",
+    "hyponym",
+] as const;
+export type SemanticRelation = (typeof SemanticRelations)[number];
 
 export interface UnknownTags {
     unknown_tags?: string[];

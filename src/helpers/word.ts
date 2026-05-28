@@ -20,7 +20,7 @@ export const isSupportedLanguageCode = (k: string): k is LanguageCode =>
     SUPPORTED_LANGUAGE_CODES.includes(k as LanguageCode);
 
 export function parseSupportedLanguageCode(rawValue: string): LanguageCode {
-    const normalized = rawValue.toLowerCase().trim();
+    const normalized = normalizeLangCode(rawValue);
 
     if (!isSupportedLanguageCode(normalized)) {
         throw new Error(
@@ -33,13 +33,9 @@ export function parseSupportedLanguageCode(rawValue: string): LanguageCode {
 
 export function normalizeLangCode(value: string): LanguageCode {
     try {
-        return parseSupportedLanguageCode(value);
+        return value.toLowerCase().trim() as LanguageCode;
     } catch (error) {
-        const message =
-            error instanceof Error
-                ? error.message
-                : `Language code not valid: ${value}`;
-        console.error(`❌ ${message}`);
+        console.error(`❌ Language code not valid: ${value}`);
         process.exit(1);
     }
 }
@@ -102,6 +98,7 @@ export function sanitizeEntry(word: WiktextractEntry): WiktextractEntry {
     word.translations = cleanup(word.translations, "sense", false);
     word.hyphenations = cleanup(word.hyphenations, "sense", false);
     word.sounds = cleanup(word.sounds, "sense", false);
+    word.sounds = cleanup(word.sounds, "ipa");
     word.proverbs = cleanup(word.proverbs, "sense", false);
     word.forms = dedupArray(word.forms ?? [], "form");
 

@@ -45,7 +45,7 @@ export function dedupArray<T, K extends keyof T>(
     const getKey = (element: T, props: K[]) => {
         const propsValue = [];
         for (const p of props) {
-            propsValue.push(element[p]);
+            propsValue.push(JSON.stringify(element[p]));
         }
 
         return propsValue.join("|").replaceAll(/\s/gi, "");

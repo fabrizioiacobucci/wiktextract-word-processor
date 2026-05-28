@@ -12,7 +12,6 @@ import type {
 } from "../types/word.types";
 import { generateWordId } from "./word";
 
-// Type guard per validare una chiave a runtime
 const isTagKey = (k: string): k is TagKey => k in TAGS;
 const isTopicKey = (k: string): k is TopicKey => k in TOPICS;
 

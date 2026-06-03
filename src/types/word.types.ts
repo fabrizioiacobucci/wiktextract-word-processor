@@ -249,14 +249,16 @@ export interface UnknownTopics {
     unknown_topics?: string[];
 }
 
+export type Offset = [number, number];
+
 export interface RawSenseExample {
     text: string;
-    bold_text_offsets?: [number[]];
+    bold_text_offsets?: Offset[];
     translation?: string;
     ref?: string;
     roman?: string;
-    bold_roman_offsets?: [number[]];
-    bold_translation_offsets?: [number[]];
+    bold_roman_offsets?: Offset[];
+    bold_translation_offsets?: Offset[];
     tags?: string[];
 }
 

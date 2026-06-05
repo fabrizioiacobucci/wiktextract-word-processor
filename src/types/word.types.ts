@@ -632,7 +632,7 @@ export interface Word
     rand: number; // 0-1 for random sampling
 
     // === ATTRIBUTION ===
-    source: "wiktionary";
+    source: string;
     license: string; // "CC BY-SA 4.0"
     url: string;
 

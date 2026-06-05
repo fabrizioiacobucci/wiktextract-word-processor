@@ -526,7 +526,7 @@ export interface RawTranslation {
     sense: string;
     roman: string;
     tags: string[];
-    raw_tags: string[];
+    raw_tags?: string[];
 }
 
 export interface ParsedTranslation extends RawTranslation, TagsMetadata {}
@@ -583,7 +583,7 @@ export interface WiktextractEntry {
     pos: string;
     pos_title: string;
     senses?: RawSense[];
-    etymology_texts?: string[];
+    etymology_texts: string[];
     forms?: RawForm[];
     hyphenations?: Hyphenation[];
     sounds?: RawSound[];
@@ -628,7 +628,7 @@ export interface Word
 
     // === METADATA ===
     rarity: number; // 1-100
-    rarityMap: object;
+    rarityMap?: object;
     rand: number; // 0-1 for random sampling
 
     // === ATTRIBUTION ===
@@ -637,6 +637,6 @@ export interface Word
     url: string;
 
     // === TIMESTAMPS ===
-    created_at_utc: ISODateString; // When document was created in Supabase
+    created_at_utc?: ISODateString; // When document was created in Supabase
     updated_at_utc?: ISODateString; // Last update timestamp
 }

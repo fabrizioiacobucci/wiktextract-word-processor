@@ -1,6 +1,12 @@
 import { calculateRarity } from "./rarity";
 import { LanguageCode, toUTCDateString } from "../types/generic.types";
-import { type TagKey, TAGS, TOPICS, type TopicKey } from "../types/word.types";
+import {
+    TAG_LABELS,
+    TAGS,
+    TOPIC_LABELS,
+    TOPICS,
+    type TopicKey,
+} from "../types/word.types";
 import type {
     WiktextractEntry,
     RawSense,
@@ -9,6 +15,7 @@ import type {
     ParsedSenseExample,
     UnknownTopics,
     UnknownTags,
+    TagKey,
 } from "../types/word.types";
 import { generateWordId } from "./word";
 
@@ -35,7 +42,7 @@ function parseTopics<T extends { topics?: string[] }>(
     };
 }
 
-function parseSense(raw: RawSense): ParsedSense {
+function parseSense(raw: RawSense, lang_id: LanguageCode): ParsedSense {
     const examples: ParsedSenseExample[] = (raw.examples ?? []).map(parseTags);
 
     const parsed = parseTopics(parseTags(raw));
@@ -43,8 +50,12 @@ function parseSense(raw: RawSense): ParsedSense {
     return {
         ...parsed,
         examples: examples,
-        tagLabels: (parsed.tags ?? []).map((k) => TAGS[k]),
-        topicLabels: (parsed.topics ?? []).map((k) => TOPICS[k]),
+        tagLabels: (parsed.tags ?? []).map(
+            (k) => TAG_LABELS[lang_id]?.[k as TagKey] ?? "",
+        ),
+        topicLabels: (parsed.topics ?? []).map(
+            (k) => TOPIC_LABELS[lang_id]?.[k as TopicKey] ?? "",
+        ),
     };
 }
 
@@ -66,7 +77,7 @@ export function parseEntry(
         pos: [parsed.pos],
         pos_title: [parsed.pos_title],
 
-        senses: (raw.senses ?? []).map(parseSense),
+        senses: (raw.senses ?? []).map((s) => parseSense(s, langCode)),
         sounds: (raw.sounds ?? []).map(parseTags),
         translations: (raw.translations ?? []).map(parseTags),
         forms: (raw.forms ?? []).map(parseTags),

@@ -1,35 +1,73 @@
 import { ISODateString, LanguageCode } from "./generic.types";
 
-export type PART_OF_SPEECH =
-    | "noun"
-    | "verb"
-    | "adj"
-    | "adv"
-    | "name"
-    | "prefix"
-    | "suffix"
-    | "intj"
-    | "contraction"
-    | "character"
-    | "proverb"
-    | "phrase"
-    | "prep"
-    | "conj"
-    | "pron"
-    | "det"
-    | "article"
-    | "num"
-    | "unknown"
-    | "abbrev"
-    | "adj_noun"
-    | "adv_phrase"
-    | "particle"
-    | "classifier"
-    | "symbol"
-    | "prep_phrase"
-    | "punct"
-    | "postp"
-    | "affix";
+export const PART_OF_SPEECH = [
+    "noun",
+    "verb",
+    "adj",
+    "adv",
+    "name",
+    "prefix",
+    "suffix",
+    "intj",
+    "contraction",
+    "character",
+    "proverb",
+    "phrase",
+    "prep",
+    "conj",
+    "pron",
+    "det",
+    "article",
+    "num",
+    "unknown",
+    "abbrev",
+    "adj_noun",
+    "adv_phrase",
+    "particle",
+    "classifier",
+    "symbol",
+    "prep_phrase",
+    "punct",
+    "postp",
+    "affix",
+] as const;
+export type PosKey = (typeof PART_OF_SPEECH)[number];
+
+export const POS_LABELS: {
+    [lang in LanguageCode]?: { [key in PosKey]?: string };
+} = {
+    it: {
+        noun: "sostantivo",
+        verb: "verbo",
+        adj: "aggettivo",
+        adv: "avverbio",
+        name: "nome",
+        prefix: "prefisso",
+        suffix: "suffisso",
+        intj: "interiezione",
+        contraction: "contrazione",
+        character: "carattere",
+        proverb: "proverbio",
+        phrase: "frase",
+        prep: "preposizione",
+        conj: "congiunzione",
+        pron: "pronome",
+        det: "determinante",
+        article: "articolo",
+        num: "numero",
+        unknown: "sconosciuto",
+        abbrev: "abbreviazione",
+        adj_noun: "aggettivo sostantivato",
+        adv_phrase: "locuzione avverbiale",
+        particle: "particella pronominale",
+        classifier: "classificatore",
+        symbol: "simbolo",
+        prep_phrase: "locuzione preposizionale",
+        punct: "punteggiatura",
+        postp: "postposizione",
+        affix: "affisso",
+    },
+};
 
 export const TAGS = [
     "abbreviation",

@@ -1,6 +1,8 @@
 import { calculateRarity } from "./rarity";
 import { LanguageCode, toUTCDateString } from "../types/generic.types";
 import {
+    PART_OF_SPEECH,
+    POS_LABELS,
     TAG_LABELS,
     TAGS,
     TOPIC_LABELS,
@@ -16,11 +18,13 @@ import type {
     TagsMetadata,
     TopicsMetadata,
     TagKey,
+    PosKey,
 } from "../types/word.types";
 import { generateWordId } from "./word";
 
 const isTagKey = (k: string): k is TagKey => k in TAGS;
 const isTopicKey = (k: string): k is TopicKey => k in TOPICS;
+const isPosKey = (k: string): k is PosKey => k in PART_OF_SPEECH;
 
 export function parseTags<T extends { tags?: string[] }>(
     raw: T,
@@ -64,6 +68,16 @@ export function parseSense(raw: RawSense, lang_id: LanguageCode): ParsedSense {
     return {
         ...parsed,
         examples: examples,
+    };
+}
+
+export function parsePos<T extends { pos: string[]; pos_title: string[] }>(
+    raw: T,
+    lang_id: LanguageCode,
+): T {
+    return {
+        ...raw,
+        pos_title: raw.pos.map((p) => POS_LABELS[lang_id]?.[p as PosKey]),
     };
 }
 

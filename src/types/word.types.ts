@@ -437,11 +437,13 @@ export const SemanticRelations = [
 ] as const;
 export type SemanticRelation = (typeof SemanticRelations)[number];
 
-export interface UnknownTags {
+export interface TagsMetadata {
+    tag_labels?: string[];
     unknown_tags?: string[];
 }
 
-export interface UnknownTopics {
+export interface TopicsMetadata {
+    topic_labels?: string[];
     unknown_topics?: string[];
 }
 
@@ -458,7 +460,7 @@ export interface RawSenseExample {
     tags?: string[];
 }
 
-export interface ParsedSenseExample extends RawSenseExample, UnknownTags {}
+export interface ParsedSenseExample extends RawSenseExample, TagsMetadata {}
 
 interface SenseForm {
     word: string;
@@ -475,10 +477,8 @@ export interface RawSense {
 }
 
 export interface ParsedSense
-    extends UnknownTags, UnknownTopics, Omit<RawSense, "examples"> {
+    extends TagsMetadata, TopicsMetadata, Omit<RawSense, "examples"> {
     examples: ParsedSenseExample[];
-    tagLabels: string[]; // es. ["arcaico", "intransitivo"]
-    topicLabels: string[]; // es. ["botanica", "medicina"]
 }
 
 export interface RawTranslation {
@@ -491,7 +491,7 @@ export interface RawTranslation {
     raw_tags: string[];
 }
 
-export interface ParsedTranslation extends RawTranslation, UnknownTags {}
+export interface ParsedTranslation extends RawTranslation, TagsMetadata {}
 
 interface Hyphenation {
     parts: string[];
@@ -512,7 +512,7 @@ export interface RawSound {
     flac_url?: string;
 }
 
-export interface ParsedSound extends RawSound, UnknownTags {}
+export interface ParsedSound extends RawSound, TagsMetadata {}
 
 export interface RawSemanticRelation {
     word: string;
@@ -521,7 +521,7 @@ export interface RawSemanticRelation {
 }
 
 export interface ParsedSemanticRelation
-    extends RawSemanticRelation, UnknownTags {}
+    extends RawSemanticRelation, TagsMetadata {}
 
 interface Proverb {
     word: string;
@@ -535,7 +535,7 @@ export interface RawForm {
     source?: string;
 }
 
-export interface ParsedForm extends RawForm, UnknownTags {}
+export interface ParsedForm extends RawForm, TagsMetadata {}
 
 export interface WiktextractEntry {
     word: string;
@@ -568,7 +568,9 @@ export interface WiktextractEntry {
 }
 
 export interface Word
-    extends Omit<WiktextractEntry, "pos" | "pos_title" | "title">, UnknownTags {
+    extends
+        Omit<WiktextractEntry, "pos" | "pos_title" | "title">,
+        TagsMetadata {
     // === BASE FIELDS ===
     id: string;
 

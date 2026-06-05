@@ -13,8 +13,8 @@ import type {
     Word,
     ParsedSense,
     ParsedSenseExample,
-    UnknownTopics,
-    UnknownTags,
+    TagsMetadata,
+    TopicsMetadata,
     TagKey,
 } from "../types/word.types";
 import { generateWordId } from "./word";
@@ -22,40 +22,48 @@ import { generateWordId } from "./word";
 const isTagKey = (k: string): k is TagKey => k in TAGS;
 const isTopicKey = (k: string): k is TopicKey => k in TOPICS;
 
-function parseTags<T extends { tags?: string[] }>(raw: T): T & UnknownTags {
+function parseTags<T extends { tags?: string[] }>(
+    raw: T,
+    lang_id: LanguageCode,
+): T & TagsMetadata {
+    const known = (raw.tags ?? []).filter((t: string) => isTagKey(t));
+    const labels = known.map((t) => TAG_LABELS[lang_id]?.[t as TagKey]);
+
     return {
         ...raw,
-        tags: (raw.tags ?? []).filter((t: string) => isTagKey(t)),
+        tags: known,
         unknown_tags: (raw.tags ?? []).filter((t: string) => !isTagKey(t)),
+        tag_labels: labels.filter((l) => l !== undefined),
     };
 }
 
 function parseTopics<T extends { topics?: string[] }>(
     raw: T,
-): T & UnknownTopics {
+    lang_id: LanguageCode,
+): T & TopicsMetadata {
+    const known = (raw.topics ?? []).filter((t: string) => isTopicKey(t));
+    const labels = known.map((t) => TOPIC_LABELS[lang_id]?.[t as TopicKey]);
+
     return {
         ...raw,
-        topics: (raw.topics ?? []).filter((t: string) => isTopicKey(t)),
+        topics: known,
         unknown_topics: (raw.topics ?? []).filter(
             (t: string) => !isTopicKey(t),
         ),
+        tag_labels: labels.filter((l) => l !== undefined),
     };
 }
 
 function parseSense(raw: RawSense, lang_id: LanguageCode): ParsedSense {
-    const examples: ParsedSenseExample[] = (raw.examples ?? []).map(parseTags);
+    const examples: ParsedSenseExample[] = (raw.examples ?? []).map((e) =>
+        parseTags(e, lang_id),
+    );
 
-    const parsed = parseTopics(parseTags(raw));
+    const parsed = parseTopics(parseTags(raw, lang_id), lang_id);
 
     return {
         ...parsed,
         examples: examples,
-        tagLabels: (parsed.tags ?? []).map(
-            (k) => TAG_LABELS[lang_id]?.[k as TagKey] ?? "",
-        ),
-        topicLabels: (parsed.topics ?? []).map(
-            (k) => TOPIC_LABELS[lang_id]?.[k as TopicKey] ?? "",
-        ),
     };
 }
 
@@ -67,7 +75,7 @@ export function parseEntry(
 ): Word {
     const now = toUTCDateString(new Date());
     const rarity = calculateRarity(raw, frequencyMap, maxRank);
-    const parsed = parseTags(raw);
+    const parsed = parseTags(raw, langCode);
 
     return {
         ...parsed,
@@ -78,15 +86,17 @@ export function parseEntry(
         pos_title: [parsed.pos_title],
 
         senses: (raw.senses ?? []).map((s) => parseSense(s, langCode)),
-        sounds: (raw.sounds ?? []).map(parseTags),
-        translations: (raw.translations ?? []).map(parseTags),
-        forms: (raw.forms ?? []).map(parseTags),
-        synonyms: (raw.synonyms ?? []).map(parseTags),
-        derived: (raw.derived ?? []).map(parseTags),
-        related: (raw.related ?? []).map(parseTags),
-        hypernyms: (raw.hypernyms ?? []).map(parseTags),
-        antonyms: (raw.antonyms ?? []).map(parseTags),
-        hyponyms: (raw.hyponyms ?? []).map(parseTags),
+        sounds: (raw.sounds ?? []).map((x) => parseTags(x, langCode)),
+        translations: (raw.translations ?? []).map((x) =>
+            parseTags(x, langCode),
+        ),
+        forms: (raw.forms ?? []).map((x) => parseTags(x, langCode)),
+        synonyms: (raw.synonyms ?? []).map((x) => parseTags(x, langCode)),
+        derived: (raw.derived ?? []).map((x) => parseTags(x, langCode)),
+        related: (raw.related ?? []).map((x) => parseTags(x, langCode)),
+        hypernyms: (raw.hypernyms ?? []).map((x) => parseTags(x, langCode)),
+        antonyms: (raw.antonyms ?? []).map((x) => parseTags(x, langCode)),
+        hyponyms: (raw.hyponyms ?? []).map((x) => parseTags(x, langCode)),
 
         rarity: rarity.score,
         rarityMap: rarity.map,

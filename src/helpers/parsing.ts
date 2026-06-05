@@ -22,7 +22,7 @@ import { generateWordId } from "./word";
 const isTagKey = (k: string): k is TagKey => k in TAGS;
 const isTopicKey = (k: string): k is TopicKey => k in TOPICS;
 
-function parseTags<T extends { tags?: string[] }>(
+export function parseTags<T extends { tags?: string[] }>(
     raw: T,
     lang_id: LanguageCode,
 ): T & TagsMetadata {
@@ -37,7 +37,7 @@ function parseTags<T extends { tags?: string[] }>(
     };
 }
 
-function parseTopics<T extends { topics?: string[] }>(
+export function parseTopics<T extends { topics?: string[] }>(
     raw: T,
     lang_id: LanguageCode,
 ): T & TopicsMetadata {
@@ -54,7 +54,7 @@ function parseTopics<T extends { topics?: string[] }>(
     };
 }
 
-function parseSense(raw: RawSense, lang_id: LanguageCode): ParsedSense {
+export function parseSense(raw: RawSense, lang_id: LanguageCode): ParsedSense {
     const examples: ParsedSenseExample[] = (raw.examples ?? []).map((e) =>
         parseTags(e, lang_id),
     );

@@ -81,6 +81,16 @@ export function parsePos<T extends { pos: string[]; pos_title: string[] }>(
     };
 }
 
+export function parseCategories<T extends { categories: string[] }>(
+    raw: T,
+    lang_id: LanguageCode,
+): T {
+    return {
+        ...raw,
+        category_labels: raw.categories.map((c) => c.replace(/-$/, "")),
+    };
+}
+
 export function parseEntry(
     raw: WiktextractEntry,
     langCode: LanguageCode,

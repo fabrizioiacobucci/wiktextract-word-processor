@@ -485,6 +485,11 @@ export interface TopicsMetadata {
     unknown_topics?: string[];
 }
 
+export interface CategoriesMetadata {
+    category_labels?: string[];
+    unknown_categories?: string[];
+}
+
 export type Offset = [number, number];
 
 export interface RawSenseExample {
@@ -515,7 +520,11 @@ export interface RawSense {
 }
 
 export interface ParsedSense
-    extends TagsMetadata, TopicsMetadata, Omit<RawSense, "examples"> {
+    extends
+        TagsMetadata,
+        TopicsMetadata,
+        CategoriesMetadata,
+        Omit<RawSense, "examples"> {
     examples: ParsedSenseExample[];
 }
 
@@ -608,8 +617,10 @@ export interface WiktextractEntry {
 export interface Word
     extends
         Omit<WiktextractEntry, "pos" | "pos_title" | "title">,
-        TagsMetadata {
+        TagsMetadata,
+        CategoriesMetadata {
     // === BASE FIELDS ===
+    row_id: number;
     id: string;
 
     pos: string[];

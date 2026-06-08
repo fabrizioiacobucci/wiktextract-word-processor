@@ -3,7 +3,6 @@ import {
     SUPPORTED_LANGUAGE_CODES,
     ValidationResult,
 } from "../types/generic.types";
-import * as crypto from "node:crypto";
 import { WiktextractEntry, Word } from "../types/word.types";
 import {
     dedupArray,
@@ -35,19 +34,6 @@ export function normalizeLangCode(value: string): LanguageCode {
         console.error(`❌ Language code not valid: ${value}`);
         process.exit(1);
     }
-}
-
-/**
- * Generates a unique ID for a word based on its text and part of speech
- */
-export function generateWordId(word: string, pos: string): string {
-    const normalized = word.toLowerCase().trim();
-    const hash = crypto
-        .createHash("md5")
-        .update(`${normalized}-${pos}`)
-        .digest("hex")
-        .substring(0, 8);
-    return `${normalized}-${pos}-${hash}`;
 }
 
 /**
@@ -289,20 +275,6 @@ export function validateRecord(record: unknown): ValidationResult {
     }
 
     return { valid: true };
-}
-
-export function deterministicDocumentId(entry: Word): string {
-    if (typeof entry.id === "string" && entry.id) {
-        return entry.id;
-    }
-
-    const base = stableStringify({
-        lang: getEntryLang(entry) ?? "",
-        word: entry.word ?? "",
-        definitions: entry.senses ?? [],
-    });
-
-    return crypto.createHash("sha1").update(base).digest("hex");
 }
 
 export const mergeWords = (w1: Word, w2: Word) => {

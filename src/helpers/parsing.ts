@@ -4,7 +4,6 @@ import {
     ParsableEntry,
     PART_OF_SPEECH,
     POS_LABELS,
-    RawSound,
     TAG_LABELS,
     TAGS,
     TOPIC_LABELS,
@@ -13,10 +12,7 @@ import {
 } from "../types/word.types";
 import {
     WiktextractEntry,
-    RawSense,
     Word,
-    ParsedSense,
-    ParsedSenseExample,
     TagsMetadata,
     TopicsMetadata,
     TagKey,
@@ -24,7 +20,7 @@ import {
     CategoryLabels,
     CATEGORIES,
 } from "../types/word.types";
-import { generateWordId, isWord } from "./word";
+import { isWord } from "./word";
 
 const isTagKey = (k: string): k is TagKey => k in TAGS;
 const isTopicKey = (k: string): k is TopicKey => k in TOPICS;
@@ -137,7 +133,6 @@ export function parseEntry(
             ...raw,
             ...(parsed as Word),
             row_id: 0,
-            id: generateWordId(raw.word, raw.pos),
 
             pos: [(parsed as WiktextractEntry).pos],
             pos_title: [(parsed as WiktextractEntry).pos_title],

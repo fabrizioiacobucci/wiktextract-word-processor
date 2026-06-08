@@ -9,7 +9,7 @@ import {
     TOPICS,
     type TopicKey,
 } from "../types/word.types";
-import type {
+import {
     WiktextractEntry,
     RawSense,
     Word,
@@ -19,12 +19,18 @@ import type {
     TopicsMetadata,
     TagKey,
     PosKey,
+    CategoryLabels,
+    CATEGORIES,
 } from "../types/word.types";
 import { generateWordId } from "./word";
 
 const isTagKey = (k: string): k is TagKey => k in TAGS;
 const isTopicKey = (k: string): k is TopicKey => k in TOPICS;
 const isPosKey = (k: string): k is PosKey => k in PART_OF_SPEECH;
+const isCategoryLabel = (
+    k: string,
+    langId: keyof typeof CATEGORIES,
+): k is CategoryLabels<typeof langId> => k in CATEGORIES[langId];
 
 export function parseTags<T extends { tags?: string[] }>(
     raw: T,
@@ -63,7 +69,10 @@ export function parseSense(raw: RawSense, lang_id: LanguageCode): ParsedSense {
         parseTags(e, lang_id),
     );
 
-    const parsed = parseTopics(parseTags(raw, lang_id), lang_id);
+    const parsed = parseCategories(
+        parseTopics(parseTags(raw, lang_id), lang_id),
+        lang_id as keyof typeof CATEGORIES,
+    );
 
     return {
         ...parsed,
@@ -81,13 +90,23 @@ export function parsePos<T extends { pos: string[]; pos_title: string[] }>(
     };
 }
 
-export function parseCategories<T extends { categories: string[] }>(
+export function parseCategories<T extends { categories?: string[] }>(
     raw: T,
-    lang_id: LanguageCode,
+    lang_id: keyof typeof CATEGORIES,
 ): T {
+    const regex = new RegExp("-" + lang_id + "$", "i");
+    const known = (raw.categories ?? []).filter((t: string) =>
+        isCategoryLabel(t, lang_id),
+    );
+
     return {
         ...raw,
-        category_labels: raw.categories.map((c) => c.replace(/-$/, "")),
+        category_labels: known.map((c) =>
+            c.replace(regex, "").replaceAll("_", " "),
+        ),
+        unknown_categories: raw.categories?.filter(
+            (c) => !known.includes(c as CategoryLabels<typeof lang_id>),
+        ),
     };
 }
 
@@ -99,10 +118,14 @@ export function parseEntry(
 ): Word {
     const now = toUTCDateString(new Date());
     const rarity = calculateRarity(raw, frequencyMap, maxRank);
-    const parsed = parseTags(raw, langCode);
+    const parsed = parseCategories(
+        parseTags(raw, langCode),
+        langCode as keyof typeof CATEGORIES,
+    );
 
     return {
         ...parsed,
+        row_id: 0,
         id: generateWordId(raw.word, raw.pos),
         lang: langCode,
 

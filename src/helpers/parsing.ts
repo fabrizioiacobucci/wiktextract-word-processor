@@ -1,8 +1,10 @@
 import { calculateRarity } from "./rarity";
 import { LanguageCode, toUTCDateString } from "../types/generic.types";
 import {
+    ParsableEntry,
     PART_OF_SPEECH,
     POS_LABELS,
+    RawSound,
     TAG_LABELS,
     TAGS,
     TOPIC_LABELS,
@@ -22,7 +24,7 @@ import {
     CategoryLabels,
     CATEGORIES,
 } from "../types/word.types";
-import { generateWordId } from "./word";
+import { generateWordId, isWord } from "./word";
 
 const isTagKey = (k: string): k is TagKey => k in TAGS;
 const isTopicKey = (k: string): k is TopicKey => k in TOPICS;
@@ -64,10 +66,16 @@ export function parseTopics<T extends { topics?: string[] }>(
     };
 }
 
-export function parseSense(raw: RawSense, lang_id: LanguageCode): ParsedSense {
-    const examples: ParsedSenseExample[] = (raw.examples ?? []).map((e) =>
-        parseTags(e, lang_id),
-    );
+export function parseSense(
+    raw: {
+        tags?: string[];
+        topics?: string[];
+        categories?: string[];
+        examples?: { tags?: string[] }[];
+    },
+    lang_id: LanguageCode,
+) {
+    const examples = (raw.examples ?? []).map((e) => parseTags(e, lang_id));
 
     const parsed = parseCategories(
         parseTopics(parseTags(raw, lang_id), lang_id),
@@ -111,13 +119,46 @@ export function parseCategories<T extends { categories?: string[] }>(
 }
 
 export function parseEntry(
-    raw: WiktextractEntry,
+    raw: WiktextractEntry | Word,
     langCode: LanguageCode,
-    frequencyMap: Map<string, number> | undefined,
-    maxRank: number,
+    frequencyMap?: Map<string, number>,
+    maxRank?: number,
 ): Word {
     const now = toUTCDateString(new Date());
-    const rarity = calculateRarity(raw, frequencyMap, maxRank);
+
+    const parsed = basicParsing(raw, langCode);
+
+    if (!isWord(raw)) {
+        let rarity = null;
+        if (frequencyMap && maxRank)
+            rarity = calculateRarity(raw, frequencyMap, maxRank);
+
+        return {
+            ...raw,
+            ...(parsed as Word),
+            row_id: 0,
+            id: generateWordId(raw.word, raw.pos),
+
+            pos: [(parsed as WiktextractEntry).pos],
+            pos_title: [(parsed as WiktextractEntry).pos_title],
+
+            rarity: rarity?.score ?? 0,
+            rarityMap: rarity?.map ?? {},
+            rand: Math.random(),
+            source: "wiktionary",
+            license: "CC BY-SA 4.0",
+            url: `https://${langCode}.wiktionary.org/wiki/${encodeURIComponent(raw.word)}`,
+            created_at_utc: now,
+            updated_at_utc: now,
+        };
+    }
+
+    const posParsed = parsePos(parsed as Word, langCode);
+
+    return posParsed;
+}
+
+export function basicParsing(raw: ParsableEntry, langCode: LanguageCode) {
     const parsed = parseCategories(
         parseTags(raw, langCode),
         langCode as keyof typeof CATEGORIES,
@@ -125,32 +166,17 @@ export function parseEntry(
 
     return {
         ...parsed,
-        row_id: 0,
-        id: generateWordId(raw.word, raw.pos),
-        lang: langCode,
-
-        pos: [parsed.pos],
-        pos_title: [parsed.pos_title],
-
-        senses: (raw.senses ?? []).map((s) => parseSense(s, langCode)),
-        sounds: (raw.sounds ?? []).map((x) => parseTags(x, langCode)),
-        translations: (raw.translations ?? []).map((x) =>
+        senses: (parsed.senses ?? []).map((s) => parseSense(s, langCode)),
+        sounds: (parsed.sounds ?? []).map((x) => parseTags(x, langCode)),
+        translations: (parsed.translations ?? []).map((x) =>
             parseTags(x, langCode),
         ),
-        forms: (raw.forms ?? []).map((x) => parseTags(x, langCode)),
-        synonyms: (raw.synonyms ?? []).map((x) => parseTags(x, langCode)),
-        derived: (raw.derived ?? []).map((x) => parseTags(x, langCode)),
-        related: (raw.related ?? []).map((x) => parseTags(x, langCode)),
-        hypernyms: (raw.hypernyms ?? []).map((x) => parseTags(x, langCode)),
-        antonyms: (raw.antonyms ?? []).map((x) => parseTags(x, langCode)),
-        hyponyms: (raw.hyponyms ?? []).map((x) => parseTags(x, langCode)),
-
-        rarity: rarity.score,
-        rarityMap: rarity.map,
-        rand: Math.random(),
-        source: "wiktionary",
-        license: "CC BY-SA 4.0",
-        url: `https://${langCode}.wiktionary.org/wiki/${encodeURIComponent(raw.word)}`,
-        created_at_utc: now,
+        forms: (parsed.forms ?? []).map((x) => parseTags(x, langCode)),
+        synonyms: (parsed.synonyms ?? []).map((x) => parseTags(x, langCode)),
+        derived: (parsed.derived ?? []).map((x) => parseTags(x, langCode)),
+        related: (parsed.related ?? []).map((x) => parseTags(x, langCode)),
+        hypernyms: (parsed.hypernyms ?? []).map((x) => parseTags(x, langCode)),
+        antonyms: (parsed.antonyms ?? []).map((x) => parseTags(x, langCode)),
+        hyponyms: (parsed.hyponyms ?? []).map((x) => parseTags(x, langCode)),
     };
 }

@@ -240,10 +240,6 @@ export const isWord = (w: unknown): w is Word => {
 export function getEntryLang(
     entry: Word | WiktextractEntry,
 ): string | undefined {
-    if (isWord(entry)) {
-        return normalizeLangCode(entry.lang);
-    }
-
     return normalizeLangCode(entry.lang_code);
 }
 

@@ -672,7 +672,7 @@ export interface ParsedSound extends RawSound, TagsMetadata {}
 
 export interface RawSemanticRelation {
     word: string;
-    raw_tags: string[];
+    raw_tags?: string[];
     tags: string[];
 }
 
@@ -700,7 +700,7 @@ export interface WiktextractEntry {
 
     pos: string;
     pos_title: string;
-    senses?: RawSense[];
+    senses: RawSense[];
     etymology_texts: string[];
     forms?: RawForm[];
     hyphenations?: Hyphenation[];
@@ -736,15 +736,15 @@ export interface Word
     pos_title: string[];
 
     senses: ParsedSense[];
-    translations?: ParsedTranslation[];
-    sounds?: ParsedSound[];
-    forms?: ParsedForm[];
-    synonyms?: ParsedSemanticRelation[];
-    derived?: ParsedSemanticRelation[];
-    related?: ParsedSemanticRelation[];
-    hypernyms?: ParsedSemanticRelation[];
-    antonyms?: ParsedSemanticRelation[];
-    hyponyms?: ParsedSemanticRelation[];
+    translations: ParsedTranslation[];
+    sounds: ParsedSound[];
+    forms: ParsedForm[];
+    synonyms: ParsedSemanticRelation[];
+    derived: ParsedSemanticRelation[];
+    related: ParsedSemanticRelation[];
+    hypernyms: ParsedSemanticRelation[];
+    antonyms: ParsedSemanticRelation[];
+    hyponyms: ParsedSemanticRelation[];
 
     // === METADATA ===
     rarity: number; // 1-100
@@ -757,6 +757,26 @@ export interface Word
     url: string;
 
     // === TIMESTAMPS ===
-    created_at_utc?: ISODateString; // When document was created in Supabase
-    updated_at_utc?: ISODateString; // Last update timestamp
+    created_at_utc: ISODateString; // When document was created in Supabase
+    updated_at_utc: ISODateString; // Last update timestamp
+}
+
+export interface ParsableEntry {
+    tags?: string[];
+    categories?: string[];
+    senses: {
+        tags?: string[];
+        topics?: string[];
+        categories?: string[];
+        examples?: { tags?: string[] }[];
+    }[];
+    sounds?: { tags?: string[] }[];
+    translations?: { tags?: string[] }[];
+    forms?: { tags?: string[] }[];
+    synonyms?: { tags?: string[] }[];
+    derived?: { tags?: string[] }[];
+    related?: { tags?: string[] }[];
+    hypernyms?: { tags?: string[] }[];
+    antonyms?: { tags?: string[] }[];
+    hyponyms?: { tags?: string[] }[];
 }

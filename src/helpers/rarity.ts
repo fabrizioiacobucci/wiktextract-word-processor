@@ -6,7 +6,7 @@ import {
     POS_RARITY_MODIFIER,
     RARITY_TAG_SCORES,
 } from "../types/rarity.types";
-import { TOPICS, WiktextractEntry } from "../types/word.types";
+import { CATEGORIES, TOPICS, WiktextractEntry } from "../types/word.types";
 
 export function getFrequencyRarityAdjustment(
     word: string,
@@ -118,7 +118,10 @@ export function calculateTechnicalCategory(
     lang: LanguageCode,
     rarityMap?: { [key: string]: number | boolean },
 ): { score: number; count: number } {
-    const technicalCategories = TOPICS || [];
+    const technicalCategories = [
+        ...TOPICS,
+        ...CATEGORIES[lang as keyof typeof CATEGORIES],
+    ];
     let score = 0;
     let techCategories = 0;
     let techTopics = 0;
@@ -327,7 +330,9 @@ export function calculateRarity(
         const fn = options.technicalCategoryFn ?? calculateTechnicalCategory;
         const techResult = fn(
             entry.senses,
-            entry.categories || [],
+            entry.categories
+                ?.concat(entry.senses?.flatMap((s) => s.categories ?? []))
+                .concat(entry.senses?.flatMap((s) => s.topics ?? [])) || [],
             entry.lang_code as LanguageCode,
             rarityMap,
         );

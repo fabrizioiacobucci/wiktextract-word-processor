@@ -34,13 +34,13 @@ export interface CalculateRarityOptions {
         senses: WiktextractEntry["senses"],
         rarityTagScores: Record<string, number>,
         tags: string[],
-        rarityMap?: { [key: string]: number | boolean },
+        rarityMap?: RarityMap,
     ) => { score: number; count: number };
     technicalCategoryFn?: (
         senses: WiktextractEntry["senses"],
         categories: string[],
         lang: LanguageCode,
-        rarityMap?: { [key: string]: number | boolean },
+        rarityMap?: RarityMap,
     ) => { score: number; count: number };
     verbConjugationFn?: (pos: string, formsCount: number) => number;
     polysemousFn?: (
@@ -50,10 +50,7 @@ export interface CalculateRarityOptions {
     ) => number;
     derivedCountFn?: (derivedCount: number) => number;
     tier3SignalFn?: (entry: WiktextractEntry) => number;
-    wordLengthFn?: (
-        word: string,
-        rarityMap?: { [key: string]: number | boolean },
-    ) => number;
+    wordLengthFn?: (word: string, rarityMap?: RarityMap) => number;
     clampingFn?: (entry: WiktextractEntry, score: number) => number;
 }
 
@@ -112,3 +109,19 @@ export const POS_RARITY_MODIFIER: Record<string, number> = {
     noun: -3,
     verb: -3,
 };
+
+export interface RarityMap {
+    frequency?: number;
+    hasFrequency?: boolean;
+    tags?: number;
+    tagsCount?: number;
+    categories?: number;
+    categoriesCount?: number;
+    conjugation?: number;
+    polysemous?: number;
+    pos?: number;
+    derived?: number;
+    tier3?: number;
+    length?: number;
+    clamping?: number;
+}

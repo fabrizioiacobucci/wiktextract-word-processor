@@ -4,6 +4,7 @@ import {
     DEFAULT_RARITY_CALCULATION_OPTIONS,
     POS_RARITY_MODIFIER,
     RARITY_TAG_SCORES,
+    RarityMap,
 } from "../types/rarity.types";
 import { CATEGORIES, TOPICS, WiktextractEntry } from "../types/word.types";
 
@@ -27,7 +28,7 @@ export function calculateRarityTag(
     senses: WiktextractEntry["senses"],
     rarityTagScores: Record<string, number>,
     tags: string[],
-    rarityMap?: { [key: string]: number | boolean },
+    rarityMap?: RarityMap,
 ): { score: number; count: number } {
     let score = 0;
     const sensesCount = senses?.length || 0;
@@ -66,7 +67,7 @@ export function calculateTechnicalCategory(
     senses: WiktextractEntry["senses"],
     categories: string[],
     lang: LanguageCode,
-    rarityMap?: { [key: string]: number | boolean },
+    rarityMap?: RarityMap,
 ): { score: number; count: number } {
     const technicalCategories = [
         ...TOPICS,
@@ -181,7 +182,7 @@ export function calculateTier3Signals(entry: WiktextractEntry): number {
 
 export function calculateWordLength(
     word: string,
-    rarityMap?: { [key: string]: number | boolean },
+    rarityMap?: RarityMap,
 ): number {
     let score = 0;
     const wordLength = word.length;
@@ -225,11 +226,11 @@ export function calculateRarity(
     frequencyMap: Map<string, number> | undefined,
     maxRank: number,
     options: CalculateRarityOptions = DEFAULT_RARITY_CALCULATION_OPTIONS,
-): { score: number; map: object } {
+): { score: number; map: RarityMap } {
     let score = options.baseScore;
     const hasFrequency = frequencyMap ? frequencyMap.has(entry.word) : false;
 
-    const rarityMap: { [key: string]: number | boolean } = {
+    const rarityMap: RarityMap = {
         frequency: 0,
         hasFrequency,
         tags: 0,

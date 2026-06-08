@@ -1,4 +1,5 @@
 import { ISODateString, LanguageCode } from "./generic.types";
+import { RarityMap } from "./rarity.types";
 
 export const PART_OF_SPEECH = [
     "noun",
@@ -747,7 +748,7 @@ export interface Word
 
     // === METADATA ===
     rarity: number; // 1-100
-    rarityMap: object;
+    rarity_map: RarityMap;
     rand: number; // 0-1 for random sampling
 
     // === ATTRIBUTION ===

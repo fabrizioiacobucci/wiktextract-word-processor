@@ -22,13 +22,15 @@ import {
 } from "../types/word.types";
 import { isWord } from "./word";
 
-const isTagKey = (k: string): k is TagKey => k in TAGS;
-const isTopicKey = (k: string): k is TopicKey => k in TOPICS;
-const isPosKey = (k: string): k is PosKey => k in PART_OF_SPEECH;
+const isTagKey = (k: string): k is TagKey => TAGS.includes(k as TagKey);
+const isTopicKey = (k: string): k is TopicKey => TOPICS.includes(k as TopicKey);
+const isPosKey = (k: string): k is PosKey =>
+    PART_OF_SPEECH.includes(k as PosKey);
 const isCategoryLabel = (
     k: string,
     langId: keyof typeof CATEGORIES,
-): k is CategoryLabels<typeof langId> => k in CATEGORIES[langId];
+): k is CategoryLabels<typeof langId> =>
+    CATEGORIES[langId].includes(k as CategoryLabels<typeof langId>);
 
 export function parseTags<T extends { tags?: string[] }>(
     raw: T,
@@ -137,7 +139,7 @@ export function parseEntry(
             pos_title: [(parsed as WiktextractEntry).pos_title],
 
             rarity: rarity?.score ?? 0,
-            rarityMap: rarity?.map ?? {},
+            rarity_map: rarity?.map ?? {},
             rand: Math.random(),
             source: "wiktionary",
             license: "CC BY-SA 4.0",

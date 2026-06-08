@@ -1,12 +1,12 @@
 import * as fs from "node:fs";
-import { LanguageCode } from "../types/generic.types.ts";
+import { LanguageCode } from "../types/generic.types";
 import {
     CalculateRarityOptions,
     DEFAULT_RARITY_CALCULATION_OPTIONS,
     POS_RARITY_MODIFIER,
     RARITY_TAG_SCORES,
-} from "../types/rarity.types.ts";
-import { TopicKeys, WiktextractEntry } from "../types/word.types.ts";
+} from "../types/rarity.types";
+import { TOPICS, WiktextractEntry } from "../types/word.types";
 
 export function getFrequencyRarityAdjustment(
     word: string,
@@ -118,14 +118,10 @@ export function calculateTechnicalCategory(
     lang: LanguageCode,
     rarityMap?: { [key: string]: number | boolean },
 ): { score: number; count: number } {
-    const technicalCategories = TopicKeys || [];
+    const technicalCategories = TOPICS || [];
     let score = 0;
     let techCategories = 0;
     let techTopics = 0;
-
-    if (technicalCategories.length === 0) {
-        return { score, count: 0 }; // No technical category data for this language
-    }
 
     // Check sense-level topics
     for (const sense of senses || []) {

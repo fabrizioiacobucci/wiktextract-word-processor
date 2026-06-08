@@ -2,19 +2,16 @@ import {
     LanguageCode,
     SUPPORTED_LANGUAGE_CODES,
     ValidationResult,
-} from "../types/generic.types.ts";
+} from "../types/generic.types";
 import * as crypto from "node:crypto";
-import { WiktextractEntry, Word } from "../types/word.types.ts";
+import { WiktextractEntry, Word } from "../types/word.types";
 import {
     dedupArray,
     isStringEmpty,
     sanitizeString,
     stableStringify,
-} from "./generic.ts";
-import {
-    DEFAULT_FILTER_OPTIONS,
-    filterOptions,
-} from "../types/filters.types.ts";
+} from "./generic";
+import { DEFAULT_FILTER_OPTIONS, filterOptions } from "../types/filters.types";
 
 export const isSupportedLanguageCode = (k: string): k is LanguageCode =>
     SUPPORTED_LANGUAGE_CODES.includes(k as LanguageCode);

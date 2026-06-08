@@ -1,4 +1,3 @@
-import * as fs from "node:fs";
 import { LanguageCode } from "../types/generic.types";
 import {
     CalculateRarityOptions,
@@ -22,55 +21,6 @@ export function getFrequencyRarityAdjustment(
     // sqrt compression gives more resolution at the common end
     const t = Math.sqrt(rankValue / maxRank);
     return Math.round(-25 + 32 * t);
-}
-
-export function loadFrequencyData(filePath: string): Map<string, number> {
-    const frequencyRanks = new Map<string, number>();
-    const frequency = new Map<string, number>();
-    const fileContents = fs.readFileSync(filePath, "utf-8");
-    const lines = fileContents.split(/\r?\n/);
-    let rank = 0;
-    let lastFrequency = 0;
-
-    for (const line of lines) {
-        if (line.trim() === "") {
-            continue;
-        }
-
-        // FrequencyWords format: "word count" (space-separated) or "word\tcount" (tab-separated)
-        const firstDigit = line.search(/\d/);
-        let word = line.slice(0, firstDigit - 1).trim();
-        const freq = line.slice(firstDigit);
-
-        word =
-            word[0] === word[0].toUpperCase()
-                ? word[0] + word.slice(1).toLowerCase()
-                : word.toLocaleLowerCase();
-
-        frequency.set(word, Number(freq));
-    }
-
-    frequency.entries().forEach(([w, f]) => {
-        if (lastFrequency == 0) {
-            rank++;
-            frequencyRanks.set(w, rank);
-            lastFrequency = f;
-        }
-
-        if (lastFrequency > 0) {
-            if (lastFrequency == f) {
-                frequencyRanks.set(w, rank);
-            }
-
-            if (lastFrequency != f) {
-                rank++;
-                frequencyRanks.set(w, rank);
-                lastFrequency = f;
-            }
-        }
-    });
-
-    return frequencyRanks;
 }
 
 export function calculateRarityTag(

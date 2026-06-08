@@ -132,7 +132,6 @@ export function parseEntry(
         return {
             ...raw,
             ...(parsed as Word),
-            row_id: 0,
 
             pos: [(parsed as WiktextractEntry).pos],
             pos_title: [(parsed as WiktextractEntry).pos_title],

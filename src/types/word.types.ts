@@ -574,7 +574,7 @@ export type LangCategories<K extends keyof typeof CATEGORIES> =
 export type CategoryLabels<K extends keyof typeof CATEGORIES> =
     LangCategories<K>[number];
 
-export const SemanticRelations = [
+export const SEMANTIC_RELATIONS = [
     "synonym",
     "derived",
     "related",
@@ -582,7 +582,7 @@ export const SemanticRelations = [
     "antonym",
     "hyponym",
 ] as const;
-export type SemanticRelation = (typeof SemanticRelations)[number];
+export type SemanticRelation = (typeof SEMANTIC_RELATIONS)[number];
 
 export interface TagsMetadata {
     tag_labels?: string[];
@@ -729,8 +729,7 @@ export interface Word
         TagsMetadata,
         CategoriesMetadata {
     // === BASE FIELDS ===
-    row_id: number;
-    id: string;
+    row_id?: number;
 
     pos: string[];
     pos_title: string[];
@@ -748,7 +747,7 @@ export interface Word
 
     // === METADATA ===
     rarity: number; // 1-100
-    rarityMap?: object;
+    rarityMap: object;
     rand: number; // 0-1 for random sampling
 
     // === ATTRIBUTION ===
@@ -757,8 +756,8 @@ export interface Word
     url: string;
 
     // === TIMESTAMPS ===
-    created_at_utc: ISODateString; // When document was created in Supabase
-    updated_at_utc: ISODateString; // Last update timestamp
+    created_at_utc?: ISODateString; // When document was created in Supabase
+    updated_at_utc?: ISODateString; // Last update timestamp
 }
 
 export interface ParsableEntry {

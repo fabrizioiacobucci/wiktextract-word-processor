@@ -4,12 +4,7 @@ import {
     ValidationResult,
 } from "../types/generic.types";
 import { WiktextractEntry, Word } from "../types/word.types";
-import {
-    dedupArray,
-    isStringEmpty,
-    sanitizeString,
-    stableStringify,
-} from "./generic";
+import { dedupArray, isStringEmpty, sanitizeString } from "./generic";
 import { DEFAULT_FILTER_OPTIONS, filterOptions } from "../types/filters.types";
 
 export const isSupportedLanguageCode = (k: string): k is LanguageCode =>
@@ -240,10 +235,6 @@ export function validateRecord(record: unknown): ValidationResult {
     }
 
     const candidateRecord = record as Partial<Word>;
-
-    if (!candidateRecord.id || typeof candidateRecord.id !== "string") {
-        missingFields.push("id");
-    }
 
     if (!candidateRecord.word || typeof candidateRecord.word !== "string") {
         missingFields.push("word");

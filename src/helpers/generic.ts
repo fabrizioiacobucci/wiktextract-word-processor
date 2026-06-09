@@ -38,6 +38,7 @@ export function sanitizeString(
 
 export function dedupArray<T, K extends keyof T>(
     array: T[],
+    options: any = { caseSensitive: true },
     ...keyProp: K[]
 ): T[] {
     if (!array || array.length === 0) return array;
@@ -54,7 +55,16 @@ export function dedupArray<T, K extends keyof T>(
     if (keyProp && keyProp.length > 0 && typeof array[0] === "object") {
         const result: T[] = [];
         for (const el of array) {
-            if (result.find((e) => getKey(e, keyProp) === getKey(el, keyProp)))
+            if (
+                options.caseSensitive &&
+                result.find((e) => getKey(e, keyProp) === getKey(el, keyProp))
+            )
+                continue;
+
+            if (
+                !options.caseSensitive &&
+                result.find((e) => getKey(e, keyProp) == getKey(el, keyProp))
+            )
                 continue;
 
             result.push(el);

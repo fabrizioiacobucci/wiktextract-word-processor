@@ -210,11 +210,10 @@ export const isWord = (w: unknown): w is Word => {
     if (!w) return false;
     return (
         typeof w === "object" &&
-        "id" in w &&
         "lang" in w &&
         "word" in w &&
         "rarity" in w &&
-        "rarityMap" in w
+        "rarity_map" in w
     );
 };
 

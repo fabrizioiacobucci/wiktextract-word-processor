@@ -76,10 +76,10 @@ export function dedupArray<T, K extends keyof T>(
     const stringified = array.map((x) => JSON.stringify(x));
     let setObj = options.caseSensitive
         ? new Set(stringified)
-        : stringified.filter(
-              (x) => stringified.filter((y) => x === y).length == 1,
-          );
-    return Array.from(setObj).map((x) => JSON.parse(x ?? {})) as T[];
+        : new Set(stringified.map((x) => x.toLowerCase()));
+    return Array.from(
+        stringified.filter((s) => setObj.has(s.toLowerCase())),
+    ).map((x) => JSON.parse(x ?? {})) as T[];
 }
 
 export function mergeObjects<T extends object>(obj1: T, obj2: T): T {

@@ -73,7 +73,12 @@ export function dedupArray<T, K extends keyof T>(
         return result;
     }
 
-    let setObj = new Set(array.map((x) => JSON.stringify(x)));
+    const stringified = array.map((x) => JSON.stringify(x));
+    let setObj = options.caseSensitive
+        ? new Set(stringified)
+        : stringified.filter(
+              (x) => stringified.filter((y) => x === y).length == 1,
+          );
     return Array.from(setObj).map((x) => JSON.parse(x ?? {})) as T[];
 }
 

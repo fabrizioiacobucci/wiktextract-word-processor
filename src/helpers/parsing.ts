@@ -100,7 +100,6 @@ export function parseCategories<T extends { categories?: string[] }>(
     raw: T,
     lang_id: keyof typeof CATEGORIES,
 ): T {
-    const regex = new RegExp("-" + lang_id + "$", "i");
     const known = (raw.categories ?? []).filter((t: string) =>
         isCategoryLabel(t, lang_id),
     );
@@ -108,7 +107,7 @@ export function parseCategories<T extends { categories?: string[] }>(
     return {
         ...raw,
         category_labels: known.map((c) =>
-            c.replace(regex, "").replaceAll("_", " "),
+            c.replace(/-\w\w$/i, "").replaceAll("_", " "),
         ),
         unknown_categories: raw.categories?.filter(
             (c) => !known.includes(c as CategoryLabels<typeof lang_id>),

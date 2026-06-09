@@ -73,10 +73,13 @@ export function dedupArray<T, K extends keyof T>(
         return result;
     }
 
-    const normalize = (_k: string, v: unknown): unknown =>
-        typeof v === "string" && !options.caseSensitive ? v.toLowerCase() : v;
-
-    const stringified = array.map((x) => JSON.stringify(x, normalize));
+    const stringified = array.map((x) =>
+        JSON.stringify(
+            typeof x === "string" && !options.caseSensitive
+                ? x.toLowerCase()
+                : x,
+        ),
+    );
     let setObj = new Set(stringified);
     return Array.from(setObj).map((x) => JSON.parse(x ?? {})) as T[];
 }

@@ -36,52 +36,83 @@ export function sanitizeString(
         .trim();
 }
 
+export type DedupOptions = {
+    caseSensitive?: boolean;
+};
+
+export function dedupArray<T>(array: T[], options?: DedupOptions): T[];
+export function dedupArray<T, K extends keyof T>(array: T[], firstKey: K, ...restKeys: K[]): T[];
+export function dedupArray<T, K extends keyof T>(array: T[], options: DedupOptions, ...keyProp: K[]): T[];
 export function dedupArray<T, K extends keyof T>(
     array: T[],
-    options: any = { caseSensitive: true },
-    ...keyProp: K[]
+    optionsOrKey?: DedupOptions | K,
+    ...rest: K[]
 ): T[] {
     if (!array || array.length === 0) return array;
 
-    const getKey = (element: T, props: K[]) => {
-        const propsValue = [];
-        for (const p of props) {
-            propsValue.push(JSON.stringify(element[p]));
-        }
+    let options: DedupOptions = {};
+    let keyProp: K[] = [];
 
-        return propsValue.join("|").replaceAll(/\s/gi, "");
+    if (optionsOrKey !== undefined && optionsOrKey !== null && typeof optionsOrKey === "object") {
+        options = optionsOrKey as DedupOptions;
+        keyProp = rest;
+    } else if (optionsOrKey !== undefined) {
+        keyProp = [optionsOrKey as K, ...rest];
+    }
+
+    const caseSensitive = options.caseSensitive !== false;
+
+    // ASCII control chars: never appear unescaped in stableStringify output
+    const PROP_SEP = "\x01";
+    const UNDEF = "\x02";
+
+    const serializeForKey = (val: unknown): string => {
+        if (val === undefined) return UNDEF;
+        const s = stableStringify(val);
+        return caseSensitive ? s : s.toLowerCase();
     };
 
-    if (keyProp && keyProp.length > 0 && typeof array[0] === "object") {
+    if (keyProp.length > 0) {
+        const seen = new Set<string>();
         const result: T[] = [];
         for (const el of array) {
-            if (
-                options.caseSensitive &&
-                result.find((e) => getKey(e, keyProp) === getKey(el, keyProp))
-            )
+            if (el === null || el === undefined) {
+                const sentinel = el === null ? "null" : UNDEF;
+                if (!seen.has(sentinel)) {
+                    seen.add(sentinel);
+                    result.push(el);
+                }
                 continue;
-
-            if (
-                !options.caseSensitive &&
-                result.find((e) => getKey(e, keyProp) == getKey(el, keyProp))
-            )
-                continue;
-
-            result.push(el);
+            }
+            const key = keyProp.map((p) => serializeForKey(el[p])).join(PROP_SEP);
+            if (!seen.has(key)) {
+                seen.add(key);
+                result.push(el);
+            }
         }
-
         return result;
     }
 
-    const stringified = array.map((x) =>
-        JSON.stringify(
-            typeof x === "string" && !options.caseSensitive
-                ? x.toLowerCase()
-                : x,
-        ),
-    );
-    let setObj = new Set(stringified);
-    return Array.from(setObj).map((x) => JSON.parse(x ?? {})) as T[];
+    const seen = new Set<string>();
+    const result: T[] = [];
+    for (const x of array) {
+        if (x === undefined) {
+            if (!seen.has(UNDEF)) {
+                seen.add(UNDEF);
+                result.push(x);
+            }
+            continue;
+        }
+        const key =
+            typeof x === "string" && !caseSensitive
+                ? JSON.stringify(x.toLowerCase())
+                : stableStringify(x);
+        if (!seen.has(key)) {
+            seen.add(key);
+            result.push(x);
+        }
+    }
+    return result;
 }
 
 export function mergeObjects<T extends object>(obj1: T, obj2: T): T {

@@ -12,6 +12,6 @@
         "types": ["node"],
         "noEmit": true
     },
-    "include": ["src/**/*.ts", "index.ts"],
+    "include": ["src/**/*.ts", "index.ts", "test.ts"],
     "exclude": ["node_modules"]
 }

@@ -5144,14 +5144,17 @@ export interface CategoriesMetadata {
 
 export type Offset = [number, number];
 
-export interface RawSenseExample {
-    text: string;
+export interface ExampleOffsets {
     bold_text_offsets?: Offset[];
+    bold_roman_offsets?: Offset[];
+    bold_translation_offsets?: Offset[];
+}
+
+export interface RawSenseExample extends ExampleOffsets {
+    text: string;
     translation?: string;
     ref?: string;
     roman?: string;
-    bold_roman_offsets?: Offset[];
-    bold_translation_offsets?: Offset[];
     tags?: string[];
 }
 

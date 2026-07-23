@@ -59,7 +59,7 @@ export function calculateRarityTag(
 
     return {
         score: score * (rarityMap?.hasFrequency ? 0.5 : 1),
-        count: senseTagCounts.keys().toArray().length,
+        count: senseTagCounts.size,
     };
 }
 

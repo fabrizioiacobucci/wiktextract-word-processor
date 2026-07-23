@@ -5195,7 +5195,7 @@ export interface RawTranslation {
 
 export interface ParsedTranslation extends RawTranslation, TagsMetadata {}
 
-interface Hyphenation {
+export interface Hyphenation {
     parts: string[];
     sense?: string;
 }
@@ -5225,7 +5225,7 @@ export interface RawSemanticRelation {
 export interface ParsedSemanticRelation
     extends RawSemanticRelation, TagsMetadata {}
 
-interface Proverb {
+export interface Proverb {
     word: string;
     sense: string;
 }

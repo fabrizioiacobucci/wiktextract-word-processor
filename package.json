@@ -15,8 +15,11 @@
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "keywords": [],
-    "author": "",
-    "license": "ISC",
+    "author": {
+        "name": "Fabrizio Iacobucci",
+        "email": "sviluppo@fabrizioia.it"
+    },
+    "license": "MIT",
     "devDependencies": {
         "@types/node": "^25.6.1",
         "tsx": "^4.21.0",
